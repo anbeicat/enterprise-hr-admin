@@ -14,6 +14,7 @@ import {
     UploadOutlined,
 } from "@ant-design/icons";
 import { Button, Popconfirm, Space, Upload } from "antd";
+import PermissionGuard from "../../../components/PermissionGuard";
 
 interface EmployeeToolbarProps {
     selectedCount: number;
@@ -34,42 +35,50 @@ export default function EmployeeToolbar({
 }: EmployeeToolbarProps) {
     return (
         <Space style={{ marginBottom: 12 }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
-                등록
-            </Button>
-
-            <Button
-                icon={<EditOutlined />}
-                disabled={selectedCount !== 1}
-                onClick={onEditSelected}
-            >
-                수정
-            </Button>
-
-            <Popconfirm
-                title="직원 삭제"
-                description="선택한 직원을 삭제하시겠습니까?"
-                okText="삭제"
-                cancelText="취소"
-                okButtonProps={{ danger: true }}
-                disabled={selectedCount === 0}
-                onConfirm={onDeleteSelected}
-            >
-                <Button danger icon={<DeleteOutlined />} disabled={selectedCount === 0}>
-                    삭제
+            <PermissionGuard permission="employee:write">
+                <Button type="primary" icon={<PlusOutlined />} onClick={onCreate}>
+                    등록
                 </Button>
-            </Popconfirm>
+            </PermissionGuard>
 
-            <Upload
-                accept=".csv"
-                showUploadList={false}
-                beforeUpload={(file) => {
-                    onImport(file);
-                    return false;
-                }}
-            >
-                <Button icon={<UploadOutlined />}>Excel 가져오기</Button>
-            </Upload>
+            <PermissionGuard permission="employee:write">
+                <Button
+                    icon={<EditOutlined />}
+                    disabled={selectedCount !== 1}
+                    onClick={onEditSelected}
+                >
+                    수정
+                </Button>
+            </PermissionGuard>
+
+            <PermissionGuard permission="employee:write">
+                <Popconfirm
+                    title="직원 삭제"
+                    description="선택한 직원을 삭제하시겠습니까?"
+                    okText="삭제"
+                    cancelText="취소"
+                    okButtonProps={{ danger: true }}
+                    disabled={selectedCount === 0}
+                    onConfirm={onDeleteSelected}
+                >
+                    <Button danger icon={<DeleteOutlined />} disabled={selectedCount === 0}>
+                        삭제
+                    </Button>
+                </Popconfirm>
+            </PermissionGuard>
+
+            <PermissionGuard permission="employee:write">
+                <Upload
+                    accept=".csv"
+                    showUploadList={false}
+                    beforeUpload={(file) => {
+                        onImport(file);
+                        return false;
+                    }}
+                >
+                    <Button icon={<UploadOutlined />}>Excel 가져오기</Button>
+                </Upload>
+            </PermissionGuard>
 
             <Button icon={<DownloadOutlined />} onClick={onExport}>Excel 내보내기</Button>
         </Space>

@@ -20,6 +20,7 @@ import { Menu } from "antd";
 import type { MenuProps } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
+import { canAccessRoute } from "../auth/access";
 
 type MenuItem = Required<MenuProps>["items"][number];
 
@@ -146,15 +147,16 @@ export default function SidebarMenu() {
     const navigate = useNavigate();
     const location = useLocation();
     const role = useAppSelector((state) => state.auth.role);
-    const allowedRoots: Record<string, string[]> = {
-        ADMIN: ["/dashboard", "system", "requests", "approvals", "attendance", "notice", "logs"],
-        HR_MANAGER: ["/dashboard", "system", "requests", "approvals", "attendance", "notice", "logs"],
-        DEPT_MANAGER: ["/dashboard", "requests", "approvals", "attendance", "notice"],
-        EMPLOYEE: ["/dashboard", "requests", "approvals", "attendance", "notice"],
-    };
-    const visibleItems = menuItems.filter(
-        (item) => item && allowedRoots[role ?? "EMPLOYEE"].includes(String(item.key)),
-    );
+    const visibleItems = menuItems.flatMap((item): MenuItem[] => {
+        if (!item || !("key" in item)) return [];
+        if ("children" in item && Array.isArray(item.children)) {
+            const children = (item.children as MenuItem[]).filter(
+                (child) => child && "key" in child && canAccessRoute(role, String(child.key)),
+            );
+            return children.length > 0 ? [{ ...item, children } as MenuItem] : [];
+        }
+        return canAccessRoute(role, String(item.key)) ? [item] : [];
+    });
 
     return (
         <Menu

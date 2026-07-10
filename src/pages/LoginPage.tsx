@@ -13,7 +13,7 @@ import {
 } from "@ant-design/icons";
 import { Button, Card, Checkbox, Form, Input, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
-import loginBg from "../assets/images/login-bg.png";
+import loginBg from "../assets/images/login-bg.jpg";
 import { loginSuccess, type UserRole } from "../store/authSlice";
 import { useAppDispatch } from "../store/hooks";
 

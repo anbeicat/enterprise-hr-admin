@@ -17,6 +17,14 @@ const DEPARTMENTS_KEY = "enterprise-hr-departments";
 const ROLES_KEY = "enterprise-hr-roles";
 const NOTICES_KEY = "enterprise-hr-notices";
 const CODES_KEY = "enterprise-hr-codes";
+const DATA_STORAGE_KEYS = [
+    EMPLOYEES_KEY,
+    REQUESTS_KEY,
+    DEPARTMENTS_KEY,
+    ROLES_KEY,
+    NOTICES_KEY,
+    CODES_KEY,
+];
 
 function readStorage<T>(key: string, fallback: T): T {
     try {
@@ -44,4 +52,5 @@ export const mockDatabase = {
     saveNotices: (notices: Notice[]) => writeStorage(NOTICES_KEY, notices),
     getCodes: () => readStorage<CodeItem[]>(CODES_KEY, initialCodes),
     saveCodes: (codes: CodeItem[]) => writeStorage(CODES_KEY, codes),
+    reset: () => DATA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)),
 };

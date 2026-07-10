@@ -16,6 +16,7 @@ import {
     DashboardPage,
     DepartmentListPage,
     EmployeeListPage,
+    ForbiddenPage,
     LogListPage,
     LoginPage,
     MenuListPage,
@@ -23,6 +24,11 @@ import {
     RequestListPage,
     RoleListPage,
 } from "./lazyPages";
+import RoleRoute from "./RoleRoute";
+
+const authorize = (path: string, element: React.ReactNode) => (
+    <RoleRoute path={path}>{element}</RoleRoute>
+);
 
 export const router = createBrowserRouter([
     {
@@ -47,67 +53,71 @@ export const router = createBrowserRouter([
             },
             {
                 path: "system/employees",
-                element: <EmployeeListPage />,
+                element: authorize("/system/employees", <EmployeeListPage />),
             },
             {
                 path: "system/departments",
-                element: <DepartmentListPage />,
+                element: authorize("/system/departments", <DepartmentListPage />),
             },
             {
                 path: "system/roles",
-                element: <RoleListPage />,
+                element: authorize("/system/roles", <RoleListPage />),
             },
             {
                 path: "system/menus",
-                element: <MenuListPage />,
+                element: authorize("/system/menus", <MenuListPage />),
             },
             {
                 path: "system/dictionaries",
-                element: <CodeListPage />,
+                element: authorize("/system/dictionaries", <CodeListPage />),
             },
             {
                 path: "requests/leave",
-                element: <RequestListPage type="LEAVE" />,
+                element: authorize("/requests/leave", <RequestListPage type="LEAVE" />),
             },
             {
                 path: "requests/overtime",
-                element: <RequestListPage type="OVERTIME" />,
+                element: authorize("/requests/overtime", <RequestListPage type="OVERTIME" />),
             },
             {
                 path: "requests/business-trip",
-                element: <RequestListPage type="BUSINESS_TRIP" />,
+                element: authorize("/requests/business-trip", <RequestListPage type="BUSINESS_TRIP" />),
             },
             {
                 path: "approvals/pending",
-                element: <ApprovalPage mode="pending" />,
+                element: authorize("/approvals/pending", <ApprovalPage mode="pending" />),
             },
             {
                 path: "approvals/my-requests",
-                element: <ApprovalPage mode="mine" />,
+                element: authorize("/approvals/my-requests", <ApprovalPage mode="mine" />),
             },
             {
                 path: "approvals/history",
-                element: <ApprovalPage mode="history" />,
+                element: authorize("/approvals/history", <ApprovalPage mode="history" />),
             },
             {
                 path: "attendance/status",
-                element: <AttendancePage mode="status" />,
+                element: authorize("/attendance/status", <AttendancePage mode="status" />),
             },
             {
                 path: "attendance/monthly",
-                element: <AttendancePage mode="monthly" />,
+                element: authorize("/attendance/monthly", <AttendancePage mode="monthly" />),
             },
             {
                 path: "notices",
-                element: <NoticeListPage />,
+                element: authorize("/notices", <NoticeListPage />),
             },
             {
                 path: "logs/audit",
-                element: <LogListPage type="audit" />,
+                element: authorize("/logs/audit", <LogListPage type="audit" />),
             },
             {
                 path: "logs/login",
-                element: <LogListPage type="login" />,
+                element: authorize("/logs/login", <LogListPage type="login" />),
+            },
+            {
+                path: "403",
+                element: <ForbiddenPage />,
             },
             {
                 path: "*",

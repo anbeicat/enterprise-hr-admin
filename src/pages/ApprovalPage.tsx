@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import PageTitle from "../components/PageTitle";
 import { getRequests, processRequest } from "../features/requests/api";
 import { APPROVAL_STATUS_COLOR, APPROVAL_STATUS_TEXT, REQUEST_TYPE_TEXT, type RequestRecord } from "../features/requests/types";
+import PermissionGuard from "../components/PermissionGuard";
 
 type ApprovalMode = "pending" | "mine" | "history";
 interface ApprovalPageProps { mode: ApprovalMode; }
@@ -46,7 +47,7 @@ export default function ApprovalPage({ mode }: ApprovalPageProps) {
                     { title: "관리", render: (_, item) => <Button type="link" onClick={() => setSelected(item)}>상세</Button> },
                 ]} />
             </Card>
-            <Modal open={Boolean(selected)} title="결재 상세" footer={mode === "pending" ? <Space><Button danger onClick={() => process("REJECTED")}>반려</Button><Button type="primary" onClick={() => process("APPROVED")}>승인</Button></Space> : undefined} onCancel={() => setSelected(null)} width={720}>
+            <Modal open={Boolean(selected)} title="결재 상세" footer={mode === "pending" ? <PermissionGuard permission="approval:process"><Space><Button danger onClick={() => process("REJECTED")}>반려</Button><Button type="primary" onClick={() => process("APPROVED")}>승인</Button></Space></PermissionGuard> : undefined} onCancel={() => setSelected(null)} width={720}>
                 {selected && <><Descriptions bordered column={2} size="small" items={[
                     { key: "no", label: "신청번호", children: selected.requestNo }, { key: "type", label: "유형", children: REQUEST_TYPE_TEXT[selected.type] },
                     { key: "requester", label: "신청자", children: selected.requester }, { key: "department", label: "부서", children: selected.department },

@@ -234,4 +234,10 @@ export const handlers = [
         await delay(API_DELAY);
         return HttpResponse.json(initialAttendance);
     }),
+
+    http.post("/api/demo/reset", async () => {
+        await delay(API_DELAY);
+        mockDatabase.reset();
+        return HttpResponse.json({ success: true });
+    }),
 ];

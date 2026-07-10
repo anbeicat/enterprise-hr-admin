@@ -5,6 +5,7 @@ import { useState } from "react";
 import PageTitle from "../components/PageTitle";
 import { createNotice, deleteNotice, getNotices, updateNotice } from "../features/notices/api";
 import type { Notice, NoticeFormValues } from "../features/notices/types";
+import PermissionGuard from "../components/PermissionGuard";
 
 export default function NoticeListPage() {
     const queryClient = useQueryClient();
@@ -42,7 +43,9 @@ export default function NoticeListPage() {
             <PageTitle title="공지사항" description="사내 공지사항을 등록하고 관리합니다." />
             {isError && <Alert type="error" showIcon message="공지사항을 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card styles={{ body: { padding: 12 } }}>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} style={{ marginBottom: 12 }}>등록</Button>
+                <PermissionGuard permission="notice:manage">
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} style={{ marginBottom: 12 }}>등록</Button>
+                </PermissionGuard>
                 <Table<Notice>
                     rowKey="id"
                     loading={isLoading}
@@ -57,20 +60,22 @@ export default function NoticeListPage() {
                         {
                             title: "관리",
                             render: (_, item) => (
-                                <Space>
-                                    <Button type="link" icon={<EditOutlined />} onClick={() => openModal(item)}>수정</Button>
-                                    <Popconfirm
-                                        title="공지사항을 삭제하시겠습니까?"
-                                        okText="삭제"
-                                        cancelText="취소"
-                                        onConfirm={async () => {
-                                            await deleteMutation.mutateAsync(item.id);
-                                            message.success("공지사항이 삭제되었습니다.");
-                                        }}
-                                    >
-                                        <Button type="link" danger icon={<DeleteOutlined />}>삭제</Button>
-                                    </Popconfirm>
-                                </Space>
+                                <PermissionGuard permission="notice:manage" fallback="-">
+                                    <Space>
+                                        <Button type="link" icon={<EditOutlined />} onClick={() => openModal(item)}>수정</Button>
+                                        <Popconfirm
+                                            title="공지사항을 삭제하시겠습니까?"
+                                            okText="삭제"
+                                            cancelText="취소"
+                                            onConfirm={async () => {
+                                                await deleteMutation.mutateAsync(item.id);
+                                                message.success("공지사항이 삭제되었습니다.");
+                                            }}
+                                        >
+                                            <Button type="link" danger icon={<DeleteOutlined />}>삭제</Button>
+                                        </Popconfirm>
+                                    </Space>
+                                </PermissionGuard>
                             ),
                         },
                     ]}

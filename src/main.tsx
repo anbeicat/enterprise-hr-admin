@@ -15,6 +15,7 @@ import { Provider } from "react-redux";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes/router";
 import { store } from "./store";
+import AppErrorBoundary from "./components/AppErrorBoundary";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -38,9 +39,11 @@ enableMocking().then(() => {
             locale={koKR}
             renderEmpty={() => <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="조회된 데이터가 없습니다." />}
           >
-            <React.Suspense fallback={<Spin fullscreen tip="화면을 불러오는 중입니다." />}>
-              <RouterProvider router={router} />
-            </React.Suspense>
+            <AppErrorBoundary>
+              <React.Suspense fallback={<Spin fullscreen tip="화면을 불러오는 중입니다." />}>
+                <RouterProvider router={router} />
+              </React.Suspense>
+            </AppErrorBoundary>
           </ConfigProvider>
         </QueryClientProvider>
       </Provider>

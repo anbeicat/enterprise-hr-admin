@@ -13,6 +13,7 @@ import {
     EMPLOYEE_STATUS_TEXT,
 } from "../constants";
 import type { Employee } from "../types";
+import PermissionGuard from "../../../components/PermissionGuard";
 
 interface EmployeeTableProps {
     employees: Employee[];
@@ -93,24 +94,23 @@ export default function EmployeeTable({
                     title: "관리",
                     fixed: "right",
                     render: (_, record) => (
-                        <Space>
-                            <Button type="link" size="small" onClick={() => onEdit(record)}>
-                                수정
-                            </Button>
-
-                            <Popconfirm
-                                title="직원 삭제"
-                                description="선택한 직원을 삭제하시겠습니까?"
-                                okText="삭제"
-                                cancelText="취소"
-                                okButtonProps={{ danger: true }}
-                                onConfirm={() => onDelete(record.id)}
-                            >
-                                <Button type="link" size="small" danger>
-                                    삭제
+                        <PermissionGuard permission="employee:write" fallback="-">
+                            <Space>
+                                <Button type="link" size="small" onClick={() => onEdit(record)}>
+                                    수정
                                 </Button>
-                            </Popconfirm>
-                        </Space>
+                                <Popconfirm
+                                    title="직원 삭제"
+                                    description="선택한 직원을 삭제하시겠습니까?"
+                                    okText="삭제"
+                                    cancelText="취소"
+                                    okButtonProps={{ danger: true }}
+                                    onConfirm={() => onDelete(record.id)}
+                                >
+                                    <Button type="link" size="small" danger>삭제</Button>
+                                </Popconfirm>
+                            </Space>
+                        </PermissionGuard>
                     ),
                 },
             ]}

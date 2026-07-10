@@ -12,10 +12,15 @@ import {
     GithubOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
+    ReloadOutlined,
     SearchOutlined,
 } from "@ant-design/icons";
-import { Avatar, Button, Space, Tag, Typography } from "antd";
+import { Avatar, Button, message, Popconfirm, Space, Tag, Typography } from "antd";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { resetDemoData } from "../api/system";
+import PermissionGuard from "../components/PermissionGuard";
 import { ROUTE_META } from "../routes/routeMeta";
 import { logout } from "../store/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -34,6 +39,8 @@ export default function HeaderBar({
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useAppDispatch();
+    const queryClient = useQueryClient();
+    const [resetting, setResetting] = useState(false);
 
     const { username = "admin", role = "ADMIN" } = useAppSelector((state) => state.auth);
 
@@ -43,6 +50,20 @@ export default function HeaderBar({
         localStorage.removeItem("role");
         dispatch(logout());
         navigate("/login");
+    };
+
+    const handleResetDemo = async () => {
+        setResetting(true);
+        try {
+            await resetDemoData();
+            queryClient.clear();
+            message.success("데모 데이터가 초기 상태로 복원되었습니다.");
+            navigate("/dashboard");
+        } catch {
+            message.error("데모 데이터를 복원하지 못했습니다.");
+        } finally {
+            setResetting(false);
+        }
     };
 
     return (
@@ -70,6 +91,22 @@ export default function HeaderBar({
             </Space>
 
             <Space size={16}>
+                <PermissionGuard permission="demo:reset">
+                    <Popconfirm
+                        title="데모 데이터 초기화"
+                        description="등록·수정한 데이터를 모두 초기 상태로 복원할까요?"
+                        okText="초기화"
+                        cancelText="취소"
+                        onConfirm={handleResetDemo}
+                    >
+                        <Button
+                            type="text"
+                            icon={<ReloadOutlined />}
+                            loading={resetting}
+                            aria-label="데모 데이터 초기화"
+                        />
+                    </Popconfirm>
+                </PermissionGuard>
                 <SearchOutlined style={{ fontSize: 18, color: "#606266" }} />
                 <GithubOutlined style={{ fontSize: 18, color: "#606266" }} />
                 <FullscreenOutlined style={{ fontSize: 18, color: "#606266" }} />

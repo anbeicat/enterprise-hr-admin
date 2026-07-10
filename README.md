@@ -12,8 +12,12 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - MSW 기반 REST API와 브라우저 로컬 데이터 저장
 - 개발/preview/정적 배포 환경에서 동작하는 Mock API
 - 역할별 사이드바 메뉴 노출
+- 역할별 라우트 및 등록·수정·삭제 버튼 접근 제어
+- 권한 없는 접근을 안내하는 403 화면
 - Sidebar, Header, Breadcrumb, TagsView, Footer
 - 보호 라우트 및 로그아웃
+- 관리자용 데모 데이터 초기화
+- 전역 오류 복구 화면
 
 ### 시스템 관리
 
@@ -122,6 +126,8 @@ npm run lint
 ## API 연동 방향
 
 현재 직원·조직·역할·메뉴·코드·신청·결재·근태·공지 데이터와 로그 조회는 MSW가 제공하는 REST API로 동작합니다. 변경 가능한 데이터는 브라우저 `localStorage`에 유지됩니다. 화면에서는 Axios로 API를 호출하고 TanStack Query로 조회, 캐시 무효화, Loading/Error/Empty 상태를 관리합니다. 페이지는 React lazy loading으로 분리되어 필요한 화면만 로드합니다. `src/api/client.ts`에는 Spring Boot 연동을 고려한 Bearer Token interceptor와 401 처리도 구성되어 있습니다.
+
+`ADMIN`, `HR_MANAGER`, `DEPT_MANAGER`, `EMPLOYEE` 역할은 중앙 권한 정책에 따라 메뉴, 라우트, 업무 버튼 접근 범위가 다릅니다. 시스템 관리자는 Header의 초기화 버튼으로 변경된 데모 데이터를 최초 상태로 복원할 수 있습니다.
 
 주요 API 계약 예시는 다음과 같습니다.
 

@@ -21,4 +21,5 @@ export const ROUTE_META: Record<string, RouteMeta> = {
     "/notices": { title: "공지사항", breadcrumb: "공지 관리 / 공지사항" },
     "/logs/audit": { title: "감사 로그", breadcrumb: "로그 관리 / 감사 로그" },
     "/logs/login": { title: "로그인 로그", breadcrumb: "로그 관리 / 로그인 로그" },
+    "/403": { title: "접근 권한 없음", breadcrumb: "접근 권한 없음" },
 };
