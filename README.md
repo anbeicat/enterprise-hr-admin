@@ -10,6 +10,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 한국어 로그인 화면과 Mock 계정 인증
 - Redux Toolkit 기반 로그인 사용자 및 역할 상태 관리
 - MSW 기반 REST API와 브라우저 로컬 데이터 저장
+- 개발/preview/정적 배포 환경에서 동작하는 Mock API
 - 역할별 사이드바 메뉴 노출
 - Sidebar, Header, Breadcrumb, TagsView, Footer
 - 보호 라우트 및 로그아웃
@@ -25,6 +26,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 조직·역할 데이터의 REST API 저장과 캐시 갱신
 - 메뉴/버튼 권한 코드 트리 조회
 - 직급, 휴가 유형, 직원 상태 공통 코드 관리
+- 메뉴·코드 데이터의 REST API 조회 및 저장
 
 ### 신청 및 전자결재
 
@@ -38,6 +40,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 
 - 일별 근태 현황과 상태 표시
 - 월별 출근율, 지각, 휴가, 연장근무 통계
+- 근태 현황 REST API 조회
 - 부서별 출근율 시각화
 - 공지사항 등록, 수정, 삭제, 상단 고정
 - 공지사항 REST API 저장과 캐시 갱신
@@ -55,6 +58,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - TanStack Query
 - Axios
 - dayjs
+- MSW
 
 ## 프로젝트 구조
 
@@ -83,6 +87,20 @@ npm run dev
 
 브라우저에서 `http://localhost:5173`으로 접속합니다.
 
+프로덕션 빌드와 Preview도 Mock API를 사용할 수 있습니다.
+
+```bash
+npm run build
+npm run preview
+```
+
+실제 Spring Boot API를 연결할 때는 환경변수를 설정합니다.
+
+```env
+VITE_ENABLE_MOCKS=false
+VITE_API_BASE_URL=https://api.example.com/api
+```
+
 ## 테스트 계정
 
 모든 계정의 비밀번호는 `123456`이며, 인증번호 입력란에는 임의의 값을 입력할 수 있습니다.
@@ -103,7 +121,7 @@ npm run lint
 
 ## API 연동 방향
 
-현재 직원·조직·역할·신청·결재·공지 데이터와 로그 조회는 MSW가 제공하는 REST API로 동작합니다. 변경 가능한 데이터는 브라우저 `localStorage`에 유지됩니다. 화면에서는 Axios로 API를 호출하고 TanStack Query로 조회, 캐시 무효화, Loading/Error 상태를 관리합니다. `src/api/client.ts`에는 Spring Boot 연동을 고려한 Bearer Token interceptor와 401 처리도 구성되어 있습니다.
+현재 직원·조직·역할·메뉴·코드·신청·결재·근태·공지 데이터와 로그 조회는 MSW가 제공하는 REST API로 동작합니다. 변경 가능한 데이터는 브라우저 `localStorage`에 유지됩니다. 화면에서는 Axios로 API를 호출하고 TanStack Query로 조회, 캐시 무효화, Loading/Error/Empty 상태를 관리합니다. 페이지는 React lazy loading으로 분리되어 필요한 화면만 로드합니다. `src/api/client.ts`에는 Spring Boot 연동을 고려한 Bearer Token interceptor와 401 처리도 구성되어 있습니다.
 
 주요 API 계약 예시는 다음과 같습니다.
 

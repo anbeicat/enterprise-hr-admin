@@ -1,32 +1,16 @@
-import { Button, Card, Form, Input, Select, Space, Table, Tag } from "antd";
+import { Alert, Button, Card, Form, Input, Select, Space, Table, Tag } from "antd";
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import PageTitle from "../components/PageTitle";
-
-interface MenuRecord {
-    id: number;
-    name: string;
-    type: "DIRECTORY" | "MENU" | "BUTTON";
-    path: string;
-    permission: string;
-    orderNo: number;
-    status: "ACTIVE" | "DISABLED";
-    children?: MenuRecord[];
-}
-
-const menuData: MenuRecord[] = [
-    { id: 1, name: "시스템 관리", type: "DIRECTORY", path: "/system", permission: "", orderNo: 1, status: "ACTIVE", children: [
-        { id: 11, name: "직원 관리", type: "MENU", path: "/system/employees", permission: "employee:list", orderNo: 1, status: "ACTIVE", children: [
-            { id: 111, name: "직원 등록", type: "BUTTON", path: "", permission: "employee:create", orderNo: 1, status: "ACTIVE" },
-            { id: 112, name: "직원 수정", type: "BUTTON", path: "", permission: "employee:update", orderNo: 2, status: "ACTIVE" },
-        ] },
-        { id: 12, name: "조직 관리", type: "MENU", path: "/system/departments", permission: "department:list", orderNo: 2, status: "ACTIVE" },
-        { id: 13, name: "역할 관리", type: "MENU", path: "/system/roles", permission: "role:list", orderNo: 3, status: "ACTIVE" },
-    ] },
-    { id: 2, name: "전자결재", type: "DIRECTORY", path: "/approvals", permission: "", orderNo: 2, status: "ACTIVE" },
-];
+import { getMenus } from "../features/menus/api";
+import type { MenuRecord } from "../features/menus/types";
 
 export default function MenuListPage() {
+    const { data: menuData = [], isLoading, isError } = useQuery({
+        queryKey: ["menus"],
+        queryFn: getMenus,
+    });
     const [keyword, setKeyword] = useState("");
     const [status, setStatus] = useState<string>();
     const filtered = useMemo(() => {
@@ -37,11 +21,17 @@ export default function MenuListPage() {
             return [];
         });
         return filter(menuData);
-    }, [keyword, status]);
+    }, [keyword, menuData, status]);
+    const expandedRowKeys = useMemo(() => {
+        const flattenIds = (items: MenuRecord[]): number[] =>
+            items.flatMap((item) => [item.id, ...(item.children ? flattenIds(item.children) : [])]);
+        return flattenIds(filtered);
+    }, [filtered]);
 
     return (
         <div>
             <PageTitle title="메뉴 관리" description="화면 메뉴와 버튼 권한 코드를 확인합니다." />
+            {isError && <Alert type="error" showIcon message="메뉴 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <Form layout="inline" onFinish={(values) => { setKeyword(values.name ?? ""); setStatus(values.status); }}>
                     <Form.Item label="메뉴명" name="name"><Input allowClear placeholder="메뉴명을 입력하세요" /></Form.Item>
@@ -50,14 +40,21 @@ export default function MenuListPage() {
                 </Form>
             </Card>
             <Card styles={{ body: { padding: 12 } }}>
-                <Table<MenuRecord> rowKey="id" dataSource={filtered} pagination={false} defaultExpandAllRows columns={[
+                <Table<MenuRecord>
+                    rowKey="id"
+                    loading={isLoading}
+                    dataSource={filtered}
+                    pagination={false}
+                    expandable={{ expandedRowKeys }}
+                    columns={[
                     { title: "메뉴명", dataIndex: "name" },
                     { title: "유형", dataIndex: "type", render: (type) => ({ DIRECTORY: "디렉터리", MENU: "메뉴", BUTTON: "버튼" }[type as MenuRecord["type"]]) },
                     { title: "정렬", dataIndex: "orderNo", width: 80 },
                     { title: "라우트 경로", dataIndex: "path" },
                     { title: "권한 코드", dataIndex: "permission" },
                     { title: "상태", render: (_, item) => <Tag color={item.status === "ACTIVE" ? "green" : "red"}>{item.status === "ACTIVE" ? "정상" : "사용 중지"}</Tag> },
-                ]} />
+                    ]}
+                />
             </Card>
         </div>
     );

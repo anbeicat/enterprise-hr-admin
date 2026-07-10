@@ -7,20 +7,22 @@
  * @FilePath: /enterprise-hr-admin/src/routes/router.tsx
  */
 import { Navigate, createBrowserRouter } from "react-router-dom";
-import AppLayout from "../layouts/AppLayout";
-import ApprovalPage from "../pages/ApprovalPage";
-import AttendancePage from "../pages/AttendancePage";
-import CodeListPage from "../pages/CodeListPage";
-import DashboardPage from "../pages/DashboardPage";
-import DepartmentListPage from "../pages/DepartmentListPage";
-import EmployeeListPage from "../pages/EmployeeListPage";
-import LogListPage from "../pages/LogListPage";
-import LoginPage from "../pages/LoginPage";
-import MenuListPage from "../pages/MenuListPage";
-import NoticeListPage from "../pages/NoticeListPage";
-import RequestListPage from "../pages/RequestListPage";
-import RoleListPage from "../pages/RoleListPage";
 import ProtectedRoute from "./ProtectedRoute";
+import {
+    AppLayout,
+    ApprovalPage,
+    AttendancePage,
+    CodeListPage,
+    DashboardPage,
+    DepartmentListPage,
+    EmployeeListPage,
+    LogListPage,
+    LoginPage,
+    MenuListPage,
+    NoticeListPage,
+    RequestListPage,
+    RoleListPage,
+} from "./lazyPages";
 
 export const router = createBrowserRouter([
     {
