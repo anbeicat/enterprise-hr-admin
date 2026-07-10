@@ -13,6 +13,9 @@ import type { RoleFormValues } from "../features/roles/types";
 import type { NoticeFormValues } from "../features/notices/types";
 import { initialLogs } from "../features/logs/mockData";
 import type { LogType } from "../features/logs/types";
+import { initialMenus } from "../features/menus/mockData";
+import type { CodePayload } from "../features/codes/types";
+import { initialAttendance } from "../features/attendance/mockData";
 
 const API_DELAY = 250;
 
@@ -199,5 +202,36 @@ export const handlers = [
         await delay(API_DELAY);
         const type = new URL(request.url).searchParams.get("type") as LogType;
         return HttpResponse.json(initialLogs.filter((item) => item.type === type));
+    }),
+
+    http.get("/api/menus", async () => {
+        await delay(API_DELAY);
+        return HttpResponse.json(initialMenus);
+    }),
+
+    http.get("/api/codes", async () => {
+        await delay(API_DELAY);
+        return HttpResponse.json(mockDatabase.getCodes());
+    }),
+
+    http.post("/api/codes", async ({ request }) => {
+        await delay(API_DELAY);
+        const values = (await request.json()) as CodePayload;
+        const codes = mockDatabase.getCodes();
+        const code = { id: Math.max(0, ...codes.map((item) => item.id)) + 1, ...values };
+        mockDatabase.saveCodes([...codes, code]);
+        return HttpResponse.json(code, { status: 201 });
+    }),
+
+    http.delete("/api/codes/:id", async ({ params }) => {
+        await delay(API_DELAY);
+        const id = Number(params.id);
+        mockDatabase.saveCodes(mockDatabase.getCodes().filter((item) => item.id !== id));
+        return new HttpResponse(null, { status: 204 });
+    }),
+
+    http.get("/api/attendance", async () => {
+        await delay(API_DELAY);
+        return HttpResponse.json(initialAttendance);
     }),
 ];

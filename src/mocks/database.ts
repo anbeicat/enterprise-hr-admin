@@ -8,12 +8,15 @@ import { initialRoles } from "../features/roles/mockData";
 import type { Role } from "../features/roles/types";
 import { initialNotices } from "../features/notices/mockData";
 import type { Notice } from "../features/notices/types";
+import { initialCodes } from "../features/codes/mockData";
+import type { CodeItem } from "../features/codes/types";
 
 const EMPLOYEES_KEY = "enterprise-hr-employees";
 const REQUESTS_KEY = "enterprise-hr-requests";
 const DEPARTMENTS_KEY = "enterprise-hr-departments";
 const ROLES_KEY = "enterprise-hr-roles";
 const NOTICES_KEY = "enterprise-hr-notices";
+const CODES_KEY = "enterprise-hr-codes";
 
 function readStorage<T>(key: string, fallback: T): T {
     try {
@@ -39,4 +42,6 @@ export const mockDatabase = {
     saveRoles: (roles: Role[]) => writeStorage(ROLES_KEY, roles),
     getNotices: () => readStorage<Notice[]>(NOTICES_KEY, initialNotices),
     saveNotices: (notices: Notice[]) => writeStorage(NOTICES_KEY, notices),
+    getCodes: () => readStorage<CodeItem[]>(CODES_KEY, initialCodes),
+    saveCodes: (codes: CodeItem[]) => writeStorage(CODES_KEY, codes),
 };
