@@ -9,6 +9,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 
 - 한국어 로그인 화면과 Mock 계정 인증
 - Redux Toolkit 기반 로그인 사용자 및 역할 상태 관리
+- MSW 기반 REST API와 브라우저 로컬 데이터 저장
 - 역할별 사이드바 메뉴 노출
 - Sidebar, Header, Breadcrumb, TagsView, Footer
 - 보호 라우트 및 로그아웃
@@ -17,6 +18,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 
 - 직원 검색, 등록, 수정, 삭제, 다중 선택
 - 직원 CSV 가져오기/내보내기(Excel 호환)
+- TanStack Query 기반 직원 데이터 캐시와 갱신
 - 계층형 조직 조회, 등록, 수정, 삭제, 하위 조직 추가
 - 조직 전체 펼치기/접기
 - 역할별 업무 권한 등록 및 수정
@@ -29,6 +31,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 신청 유형별 기간, 사용량/시간/비용, 사유 입력
 - 결재 대기함, 내 신청함, 결재 이력
 - 결재 상세 조회, 승인 및 반려 처리
+- 신청/결재 화면 간 상태 실시간 동기화
 
 ### 근태 및 운영 관리
 
@@ -62,6 +65,7 @@ src/
     employees/          # 직원 도메인
     requests/           # 신청/결재 도메인
   layouts/              # 관리자 Layout 구성요소
+  mocks/                # MSW handler와 로컬 Mock 데이터베이스
   pages/                # 업무별 화면
   routes/               # 라우트, 보호 라우트, 메타데이터
   store/                # Redux store와 인증 상태
@@ -97,7 +101,7 @@ npm run lint
 
 ## API 연동 방향
 
-현재 업무 데이터는 프론트엔드 Mock 데이터로 동작합니다. `src/api/client.ts`에 Spring Boot REST API 연동을 고려한 Axios instance, Bearer Token interceptor, 401 처리가 준비되어 있습니다.
+현재 직원·신청·결재 데이터는 MSW가 제공하는 REST API로 동작하며 브라우저 `localStorage`에 유지됩니다. 화면에서는 Axios로 API를 호출하고 TanStack Query로 조회, 캐시 무효화, Loading/Error 상태를 관리합니다. `src/api/client.ts`에는 Spring Boot 연동을 고려한 Bearer Token interceptor와 401 처리도 구성되어 있습니다.
 
 주요 API 계약 예시는 다음과 같습니다.
 

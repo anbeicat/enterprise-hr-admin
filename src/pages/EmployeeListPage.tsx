@@ -6,13 +6,19 @@
  * @description: 职员管理
  * @FilePath: /enterprise-hr-admin/src/pages/EmployeeListPage.tsx
  */
-import { Card, message } from "antd";
+import { Alert, Card, message } from "antd";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import EmployeeFormModal from "../features/employees/components/EmployeeFormModal";
 import EmployeeSearchForm from "../features/employees/components/EmployeeSearchForm";
 import EmployeeTable from "../features/employees/components/EmployeeTable";
 import EmployeeToolbar from "../features/employees/components/EmployeeToolbar";
-import { initialEmployees } from "../features/employees/mockData";
+import {
+    createEmployee,
+    deleteEmployee,
+    getEmployees,
+    updateEmployee,
+} from "../features/employees/api";
 import type {
     Employee,
     EmployeeSearchParams,
@@ -22,13 +28,32 @@ import { downloadCsv } from "../utils/csv";
 type EmployeeFormValues = Omit<Employee, "id">;
 
 export default function EmployeeListPage() {
-    const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+    const queryClient = useQueryClient();
+    const {
+        data: employees = [],
+        isLoading,
+        isError,
+    } = useQuery({ queryKey: ["employees"], queryFn: getEmployees });
     const [searchParams, setSearchParams] = useState<EmployeeSearchParams>({});
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<"create" | "edit">("create");
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+
+    const createMutation = useMutation({
+        mutationFn: createEmployee,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
+    });
+    const updateMutation = useMutation({
+        mutationFn: ({ id, values }: { id: number; values: EmployeeFormValues }) =>
+            updateEmployee(id, values),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
+    });
+    const deleteMutation = useMutation({
+        mutationFn: deleteEmployee,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
+    });
 
     const filteredEmployees = useMemo(() => {
         return employees.filter((employee) => {
@@ -82,47 +107,27 @@ export default function EmployeeListPage() {
         handleEdit(employee);
     };
 
-    const handleDelete = (id: number) => {
-        setEmployees((prev) => prev.filter((employee) => employee.id !== id));
+    const handleDelete = async (id: number) => {
+        await deleteMutation.mutateAsync(id);
         setSelectedRowKeys((prev) => prev.filter((key) => key !== id));
         message.success("직원이 삭제되었습니다.");
     };
 
-    const handleDeleteSelected = () => {
-        setEmployees((prev) =>
-            prev.filter((employee) => !selectedRowKeys.includes(employee.id)),
-        );
+    const handleDeleteSelected = async () => {
+        await Promise.all(selectedRowKeys.map((id) => deleteEmployee(Number(id))));
+        await queryClient.invalidateQueries({ queryKey: ["employees"] });
         setSelectedRowKeys([]);
         message.success("선택한 직원이 삭제되었습니다.");
     };
 
-    const handleSubmit = (values: EmployeeFormValues) => {
+    const handleSubmit = async (values: EmployeeFormValues) => {
         if (modalMode === "create") {
-            const nextId =
-                employees.length > 0
-                    ? Math.max(...employees.map((employee) => employee.id)) + 1
-                    : 1;
-
-            const newEmployee: Employee = {
-                id: nextId,
-                ...values,
-            };
-
-            setEmployees((prev) => [newEmployee, ...prev]);
+            await createMutation.mutateAsync(values);
             message.success("직원이 등록되었습니다.");
         }
 
         if (modalMode === "edit" && editingEmployee) {
-            setEmployees((prev) =>
-                prev.map((employee) =>
-                    employee.id === editingEmployee.id
-                        ? {
-                            ...employee,
-                            ...values,
-                        }
-                        : employee,
-                ),
-            );
+            await updateMutation.mutateAsync({ id: editingEmployee.id, values });
             message.success("직원 정보가 수정되었습니다.");
         }
 
@@ -168,12 +173,35 @@ export default function EmployeeListPage() {
                 joinedAt: values[8],
             };
         }).filter((employee): employee is Employee => employee !== null);
-        setEmployees((current) => [...imported, ...current]);
+        await Promise.all(
+            imported.map((employee) =>
+                createEmployee({
+                    employeeNo: employee.employeeNo,
+                    name: employee.name,
+                    departmentName: employee.departmentName,
+                    position: employee.position,
+                    email: employee.email,
+                    phone: employee.phone,
+                    role: employee.role,
+                    status: employee.status,
+                    joinedAt: employee.joinedAt,
+                }),
+            ),
+        );
+        await queryClient.invalidateQueries({ queryKey: ["employees"] });
         message.success(`${imported.length}명의 직원 정보를 가져왔습니다.`);
     };
 
     return (
         <div>
+            {isError && (
+                <Alert
+                    type="error"
+                    showIcon
+                    message="직원 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+                    style={{ marginBottom: 12 }}
+                />
+            )}
             <EmployeeSearchForm
                 onSearch={setSearchParams}
                 onReset={() => setSearchParams({})}
@@ -197,6 +225,7 @@ export default function EmployeeListPage() {
                     onSelectedRowKeysChange={setSelectedRowKeys}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    loading={isLoading}
                 />
             </Card>
 

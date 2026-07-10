@@ -20,6 +20,7 @@ interface EmployeeTableProps {
     onSelectedRowKeysChange: (keys: React.Key[]) => void;
     onEdit: (employee: Employee) => void;
     onDelete: (id: number) => void;
+    loading?: boolean;
 }
 
 export default function EmployeeTable({
@@ -28,15 +29,15 @@ export default function EmployeeTable({
     onSelectedRowKeysChange,
     onEdit,
     onDelete,
+    loading = false,
 }: EmployeeTableProps) {
     return (
         <Table
             bordered
-            virtual
-            // scroll={{ y: 500 }}
             size="middle"
             rowKey="id"
             dataSource={employees}
+            loading={loading}
             rowSelection={{
                 selectedRowKeys,
                 onChange: onSelectedRowKeysChange,

@@ -1,20 +1,29 @@
 import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { Button, Card, DatePicker, Form, Input, message, Modal, Select, Space, Table, Tag } from "antd";
+import { Alert, Button, Card, DatePicker, Form, Input, message, Modal, Select, Space, Table, Tag } from "antd";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import PageTitle from "../components/PageTitle";
-import { initialRequests } from "../features/requests/mockData";
+import { createRequest, getRequests } from "../features/requests/api";
 import { APPROVAL_STATUS_COLOR, APPROVAL_STATUS_TEXT, REQUEST_TYPE_TEXT, type RequestRecord, type RequestType } from "../features/requests/types";
 
 interface RequestListPageProps { type: RequestType; }
 interface RequestFormValues { title: string; dateRange: [dayjs.Dayjs, dayjs.Dayjs]; amount: string; reason: string; }
 
 export default function RequestListPage({ type }: RequestListPageProps) {
-    const [requests, setRequests] = useState(() => initialRequests.filter((item) => item.type === type));
+    const queryClient = useQueryClient();
+    const { data: requests = [], isLoading, isError } = useQuery({
+        queryKey: ["requests", type],
+        queryFn: () => getRequests(type),
+    });
     const [keyword, setKeyword] = useState("");
     const [status, setStatus] = useState<string>();
     const [open, setOpen] = useState(false);
     const [form] = Form.useForm<RequestFormValues>();
+    const createMutation = useMutation({
+        mutationFn: createRequest,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["requests"] }),
+    });
     const title = `${REQUEST_TYPE_TEXT[type]} 신청`;
     const filtered = useMemo(() => requests.filter((item) => (!keyword || item.title.includes(keyword)) && (!status || item.status === status)), [keyword, requests, status]);
 
@@ -22,19 +31,20 @@ export default function RequestListPage({ type }: RequestListPageProps) {
         const values = await form.validateFields();
         const nextId = Math.max(0, ...requests.map((item) => item.id)) + 1;
         const prefix = { LEAVE: "LV", OVERTIME: "OT", BUSINESS_TRIP: "BT" }[type];
-        const record: RequestRecord = {
-            id: nextId, requestNo: `${prefix}-2026-${String(nextId).padStart(3, "0")}`, type,
+        const record: Omit<RequestRecord, "id"> = {
+            requestNo: `${prefix}-2026-${String(nextId).padStart(3, "0")}`, type,
             title: values.title, requester: "admin", department: "인사팀",
             startDate: values.dateRange[0].format("YYYY-MM-DD"), endDate: values.dateRange[1].format("YYYY-MM-DD"),
             amount: values.amount, reason: values.reason, status: "PENDING", approver: "김민수", createdAt: dayjs().format("YYYY-MM-DD HH:mm"),
         };
-        setRequests((current) => [record, ...current]);
+        await createMutation.mutateAsync(record);
         setOpen(false); form.resetFields(); message.success("신청이 제출되었습니다.");
     };
 
     return (
         <div>
             <PageTitle title={title} description={`${REQUEST_TYPE_TEXT[type]} 신청 내역을 조회하고 새 신청을 제출합니다.`} />
+            {isError && <Alert type="error" showIcon message="신청 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <Form layout="inline" onFinish={(values) => { setKeyword(values.keyword ?? ""); setStatus(values.status); }}>
                     <Form.Item label="제목" name="keyword"><Input allowClear placeholder="제목 검색" /></Form.Item>
@@ -44,7 +54,7 @@ export default function RequestListPage({ type }: RequestListPageProps) {
             </Card>
             <Card styles={{ body: { padding: 12 } }}>
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => setOpen(true)} style={{ marginBottom: 12 }}>{title}</Button>
-                <Table<RequestRecord> rowKey="id" dataSource={filtered} pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }} columns={[
+                <Table<RequestRecord> rowKey="id" loading={isLoading} dataSource={filtered} pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }} columns={[
                     { title: "신청번호", dataIndex: "requestNo" }, { title: "제목", dataIndex: "title" }, { title: "기간", render: (_, item) => `${item.startDate} ~ ${item.endDate}` },
                     { title: type === "OVERTIME" ? "시간" : type === "BUSINESS_TRIP" ? "예상 비용" : "사용 일수", dataIndex: "amount" },
                     { title: "결재자", dataIndex: "approver" }, { title: "상태", render: (_, item) => <Tag color={APPROVAL_STATUS_COLOR[item.status]}>{APPROVAL_STATUS_TEXT[item.status]}</Tag> }, { title: "신청일시", dataIndex: "createdAt" },
