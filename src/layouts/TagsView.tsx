@@ -8,26 +8,29 @@
  */
 import { CloseOutlined } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ROUTE_META } from "../routes/routeMeta";
 
 interface TagItem {
     path: string;
     title: string;
 }
 
-const tags: TagItem[] = [
-    {
-        path: "/dashboard",
-        title: "대시보드",
-    },
-    {
-        path: "/system/employees",
-        title: "직원 관리",
-    },
-];
-
 export default function TagsView() {
     const navigate = useNavigate();
     const location = useLocation();
+    const currentMeta = ROUTE_META[location.pathname];
+    const tags: TagItem[] = location.pathname === "/dashboard" || !currentMeta
+        ? [{ path: "/dashboard", title: "대시보드" }]
+        : [
+            { path: "/dashboard", title: "대시보드" },
+            { path: location.pathname, title: currentMeta.title },
+        ];
+
+    const closeTag = (path: string) => {
+        if (location.pathname === path) {
+            navigate("/dashboard");
+        }
+    };
 
     return (
         <div
@@ -65,7 +68,13 @@ export default function TagsView() {
                     >
                         <span>{tag.title}</span>
                         {tag.path !== "/dashboard" && (
-                            <CloseOutlined style={{ fontSize: 10 }} />
+                            <CloseOutlined
+                                style={{ fontSize: 10 }}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    closeTag(tag.path);
+                                }}
+                            />
                         )}
                     </div>
                 );

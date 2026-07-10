@@ -15,7 +15,10 @@ import {
     SearchOutlined,
 } from "@ant-design/icons";
 import { Avatar, Button, Space, Tag, Typography } from "antd";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ROUTE_META } from "../routes/routeMeta";
+import { logout } from "../store/authSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 
 const { Text } = Typography;
 
@@ -29,12 +32,16 @@ export default function HeaderBar({
     onToggleCollapsed,
 }: HeaderBarProps) {
     const navigate = useNavigate();
+    const location = useLocation();
+    const dispatch = useAppDispatch();
 
-    const username = localStorage.getItem("username") || "admin";
+    const { username = "admin", role = "ADMIN" } = useAppSelector((state) => state.auth);
 
     const handleLogout = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("username");
+        localStorage.removeItem("role");
+        dispatch(logout());
         navigate("/login");
     };
 
@@ -57,7 +64,9 @@ export default function HeaderBar({
                     onClick={onToggleCollapsed}
                 />
 
-                <Text style={{ color: "#606266" }}>대시보드 / 시스템 관리 / 직원 관리</Text>
+                <Text style={{ color: "#606266" }}>
+                    {ROUTE_META[location.pathname]?.breadcrumb ?? "대시보드"}
+                </Text>
             </Space>
 
             <Space size={16}>
@@ -66,9 +75,9 @@ export default function HeaderBar({
                 <FullscreenOutlined style={{ fontSize: 18, color: "#606266" }} />
                 <BellOutlined style={{ fontSize: 18, color: "#606266" }} />
 
-                <Avatar size="small">{username.slice(0, 1).toUpperCase()}</Avatar>
+                <Avatar size="small">{username?.slice(0, 1).toUpperCase()}</Avatar>
                 <Text>{username}</Text>
-                <Tag color="blue">관리자</Tag>
+                <Tag color="blue">{{ ADMIN: "관리자", HR_MANAGER: "인사 관리자", DEPT_MANAGER: "부서장", EMPLOYEE: "일반 직원" }[role ?? "ADMIN"]}</Tag>
 
                 <Button type="link" onClick={handleLogout}>
                     로그아웃

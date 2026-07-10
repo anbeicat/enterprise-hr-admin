@@ -17,6 +17,7 @@ import type {
     Employee,
     EmployeeSearchParams,
 } from "../features/employees/types";
+import { downloadCsv } from "../utils/csv";
 
 type EmployeeFormValues = Omit<Employee, "id">;
 
@@ -129,6 +130,48 @@ export default function EmployeeListPage() {
         setEditingEmployee(null);
     };
 
+    const handleExport = () => {
+        downloadCsv(
+            "employees.csv",
+            ["사번", "이름", "부서", "직급", "이메일", "연락처", "권한", "재직상태", "입사일"],
+            filteredEmployees.map((employee) => [
+                employee.employeeNo,
+                employee.name,
+                employee.departmentName,
+                employee.position,
+                employee.email,
+                employee.phone,
+                employee.role,
+                employee.status,
+                employee.joinedAt,
+            ]),
+        );
+        message.success("직원 목록을 CSV 형식으로 내보냈습니다.");
+    };
+
+    const handleImport = async (file: File) => {
+        const text = await file.text();
+        const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean).slice(1);
+        const imported = lines.map((line, index): Employee | null => {
+            const values = line.split(",").map((value) => value.replace(/^"|"$/g, "").replaceAll('""', '"'));
+            if (values.length < 9) return null;
+            return {
+                id: Date.now() + index,
+                employeeNo: values[0],
+                name: values[1],
+                departmentName: values[2],
+                position: values[3],
+                email: values[4],
+                phone: values[5],
+                role: values[6] as Employee["role"],
+                status: values[7] as Employee["status"],
+                joinedAt: values[8],
+            };
+        }).filter((employee): employee is Employee => employee !== null);
+        setEmployees((current) => [...imported, ...current]);
+        message.success(`${imported.length}명의 직원 정보를 가져왔습니다.`);
+    };
+
     return (
         <div>
             <EmployeeSearchForm
@@ -142,6 +185,8 @@ export default function EmployeeListPage() {
                     onCreate={handleCreate}
                     onEditSelected={handleEditSelected}
                     onDeleteSelected={handleDeleteSelected}
+                    onImport={handleImport}
+                    onExport={handleExport}
                 />
 
 

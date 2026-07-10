@@ -14,6 +14,8 @@ import {
 import { Button, Card, Checkbox, Form, Input, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import loginBg from "../assets/images/login-bg.png";
+import { loginSuccess, type UserRole } from "../store/authSlice";
+import { useAppDispatch } from "../store/hooks";
 
 const { Title } = Typography;
 
@@ -26,13 +28,25 @@ interface LoginFormValues {
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const dispatch = useAppDispatch();
 
     const handleFinish = (values: LoginFormValues) => {
         console.log("login values:", values);
 
         // 第一阶段先做假登录
-        localStorage.setItem("accessToken", "mock-token");
+        const roleByUsername: Record<string, UserRole> = {
+            admin: "ADMIN",
+            hr: "HR_MANAGER",
+            manager: "DEPT_MANAGER",
+            employee: "EMPLOYEE",
+        };
+        const role = roleByUsername[values.username] ?? "EMPLOYEE";
+        const token = `mock-token-${values.username}`;
+
+        localStorage.setItem("accessToken", token);
         localStorage.setItem("username", values.username);
+        localStorage.setItem("role", role);
+        dispatch(loginSuccess({ username: values.username, role, token }));
 
         navigate("/dashboard");
     };

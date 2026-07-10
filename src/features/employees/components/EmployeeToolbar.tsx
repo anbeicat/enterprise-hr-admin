@@ -13,13 +13,15 @@ import {
     PlusOutlined,
     UploadOutlined,
 } from "@ant-design/icons";
-import { Button, Popconfirm, Space } from "antd";
+import { Button, Popconfirm, Space, Upload } from "antd";
 
 interface EmployeeToolbarProps {
     selectedCount: number;
     onCreate: () => void;
     onEditSelected: () => void;
     onDeleteSelected: () => void;
+    onImport: (file: File) => void;
+    onExport: () => void;
 }
 
 export default function EmployeeToolbar({
@@ -27,6 +29,8 @@ export default function EmployeeToolbar({
     onCreate,
     onEditSelected,
     onDeleteSelected,
+    onImport,
+    onExport,
 }: EmployeeToolbarProps) {
     return (
         <Space style={{ marginBottom: 12 }}>
@@ -56,9 +60,18 @@ export default function EmployeeToolbar({
                 </Button>
             </Popconfirm>
 
-            <Button icon={<UploadOutlined />}>Excel 업로드</Button>
+            <Upload
+                accept=".csv"
+                showUploadList={false}
+                beforeUpload={(file) => {
+                    onImport(file);
+                    return false;
+                }}
+            >
+                <Button icon={<UploadOutlined />}>Excel 가져오기</Button>
+            </Upload>
 
-            <Button icon={<DownloadOutlined />}>Excel 다운로드</Button>
+            <Button icon={<DownloadOutlined />} onClick={onExport}>Excel 내보내기</Button>
         </Space>
     );
 }

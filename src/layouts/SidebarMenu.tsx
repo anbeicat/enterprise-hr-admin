@@ -19,6 +19,7 @@ import {
 import { Menu } from "antd";
 import type { MenuProps } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAppSelector } from "../store/hooks";
 
 type MenuItem = Required<MenuProps>["items"][number];
 
@@ -144,6 +145,16 @@ const menuItems: MenuItem[] = [
 export default function SidebarMenu() {
     const navigate = useNavigate();
     const location = useLocation();
+    const role = useAppSelector((state) => state.auth.role);
+    const allowedRoots: Record<string, string[]> = {
+        ADMIN: ["/dashboard", "system", "requests", "approvals", "attendance", "notice", "logs"],
+        HR_MANAGER: ["/dashboard", "system", "requests", "approvals", "attendance", "notice", "logs"],
+        DEPT_MANAGER: ["/dashboard", "requests", "approvals", "attendance", "notice"],
+        EMPLOYEE: ["/dashboard", "requests", "approvals", "attendance", "notice"],
+    };
+    const visibleItems = menuItems.filter(
+        (item) => item && allowedRoots[role ?? "EMPLOYEE"].includes(String(item.key)),
+    );
 
     return (
         <Menu
@@ -151,7 +162,7 @@ export default function SidebarMenu() {
             mode="inline"
             selectedKeys={[location.pathname]}
             defaultOpenKeys={["system"]}
-            items={menuItems}
+            items={visibleItems}
             style={{ background: "#191f2f" }}
             onClick={({ key }) => {
                 if (String(key).startsWith("/")) {
