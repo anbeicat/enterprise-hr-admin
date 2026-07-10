@@ -5,37 +5,49 @@ import {
     PlusOutlined,
     PlusSquareOutlined,
 } from "@ant-design/icons";
-import { Button, Card, message, Popconfirm, Space } from "antd";
-import dayjs from "dayjs";
+import { Alert, Button, Card, message, Popconfirm, Space } from "antd";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import DepartmentFormModal from "../features/departments/components/DepartmentFormModal";
 import DepartmentSearchForm from "../features/departments/components/DepartmentSearchForm";
 import DepartmentTable from "../features/departments/components/DepartmentTable";
-import { initialDepartments } from "../features/departments/mockData";
+import {
+    createDepartment,
+    deleteDepartment,
+    getDepartments,
+    updateDepartment,
+} from "../features/departments/api";
 import type {
     Department,
     DepartmentFormValues,
     DepartmentSearchParams,
 } from "../features/departments/types";
 import {
-    addDepartmentToTree,
     filterDepartmentTree,
     flattenDepartments,
-    removeDepartmentsFromTree,
-    updateDepartmentTree,
 } from "../features/departments/utils";
 
 export default function DepartmentListPage() {
-    const [departments, setDepartments] = useState(initialDepartments);
+    const queryClient = useQueryClient();
+    const { data: departments = [], isLoading, isError } = useQuery({
+        queryKey: ["departments"],
+        queryFn: getDepartments,
+    });
     const [searchParams, setSearchParams] = useState<DepartmentSearchParams>({});
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-    const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[]>(() =>
-        flattenDepartments(initialDepartments).map((item) => item.id),
-    );
+    const [expandedRowKeys, setExpandedRowKeys] = useState<React.Key[] | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<"create" | "edit">("create");
     const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
     const [initialParentId, setInitialParentId] = useState<number | null>(null);
+    const invalidateDepartments = () =>
+        queryClient.invalidateQueries({ queryKey: ["departments"] });
+    const createMutation = useMutation({ mutationFn: createDepartment, onSuccess: invalidateDepartments });
+    const updateMutation = useMutation({
+        mutationFn: ({ id, values }: { id: number; values: DepartmentFormValues }) =>
+            updateDepartment(id, values),
+        onSuccess: invalidateDepartments,
+    });
 
     const allDepartments = useMemo(
         () => flattenDepartments(departments),
@@ -76,33 +88,26 @@ export default function DepartmentListPage() {
         openEditModal(selected);
     };
 
-    const handleDelete = (ids: number[]) => {
-        setDepartments((current) =>
-            removeDepartmentsFromTree(current, new Set(ids)),
-        );
+    const handleDelete = async (ids: number[]) => {
+        await Promise.all(ids.map(deleteDepartment));
+        await invalidateDepartments();
         setSelectedRowKeys((current) =>
             current.filter((key) => !ids.includes(Number(key))),
         );
         message.success("선택한 조직이 삭제되었습니다.");
     };
 
-    const handleSubmit = (values: DepartmentFormValues) => {
+    const handleSubmit = async (values: DepartmentFormValues) => {
         if (modalMode === "edit" && editingDepartment) {
-            setDepartments((current) =>
-                updateDepartmentTree(current, { ...editingDepartment, ...values }),
-            );
+            await updateMutation.mutateAsync({ id: editingDepartment.id, values });
             message.success("조직 정보가 수정되었습니다.");
         } else {
-            const nextId = Math.max(0, ...allDepartments.map((item) => item.id)) + 1;
-            const newDepartment: Department = {
-                ...values,
-                id: nextId,
-                createdAt: dayjs().format("YYYY-MM-DD HH:mm:ss"),
-            };
-            setDepartments((current) => addDepartmentToTree(current, newDepartment));
+            await createMutation.mutateAsync(values);
             if (values.parentId !== null) {
                 const parentId = values.parentId;
-                setExpandedRowKeys((current) => [...new Set([...current, parentId])]);
+                setExpandedRowKeys((current) => [
+                    ...new Set([...(current ?? allDepartments.map((item) => item.id)), parentId]),
+                ]);
             }
             message.success("조직이 등록되었습니다.");
         }
@@ -111,10 +116,20 @@ export default function DepartmentListPage() {
         setEditingDepartment(null);
     };
 
-    const allExpanded = expandedRowKeys.length === allDepartments.length;
+    const effectiveExpandedRowKeys =
+        expandedRowKeys ?? allDepartments.map((item) => item.id);
+    const allExpanded = effectiveExpandedRowKeys.length === allDepartments.length;
 
     return (
         <div>
+            {isError && (
+                <Alert
+                    type="error"
+                    showIcon
+                    message="조직 정보를 불러오지 못했습니다."
+                    style={{ marginBottom: 12 }}
+                />
+            )}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <DepartmentSearchForm
                     onSearch={setSearchParams}
@@ -165,8 +180,9 @@ export default function DepartmentListPage() {
 
                 <DepartmentTable
                     departments={filteredDepartments}
-                    expandedRowKeys={expandedRowKeys}
+                    expandedRowKeys={effectiveExpandedRowKeys}
                     selectedRowKeys={selectedRowKeys}
+                    loading={isLoading}
                     onExpandedRowKeysChange={setExpandedRowKeys}
                     onSelectedRowKeysChange={setSelectedRowKeys}
                     onCreateChild={(department) => openCreateModal(department.id)}

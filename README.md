@@ -22,6 +22,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 계층형 조직 조회, 등록, 수정, 삭제, 하위 조직 추가
 - 조직 전체 펼치기/접기
 - 역할별 업무 권한 등록 및 수정
+- 조직·역할 데이터의 REST API 저장과 캐시 갱신
 - 메뉴/버튼 권한 코드 트리 조회
 - 직급, 휴가 유형, 직원 상태 공통 코드 관리
 
@@ -39,7 +40,8 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 월별 출근율, 지각, 휴가, 연장근무 통계
 - 부서별 출근율 시각화
 - 공지사항 등록, 수정, 삭제, 상단 고정
-- 감사 로그 및 로그인 로그 조회
+- 공지사항 REST API 저장과 캐시 갱신
+- 감사 로그 및 로그인 로그 API 조회·검색
 - Dashboard 결재 현황, 출근율, 최근 공지
 
 ## 기술 스택
@@ -101,7 +103,7 @@ npm run lint
 
 ## API 연동 방향
 
-현재 직원·신청·결재 데이터는 MSW가 제공하는 REST API로 동작하며 브라우저 `localStorage`에 유지됩니다. 화면에서는 Axios로 API를 호출하고 TanStack Query로 조회, 캐시 무효화, Loading/Error 상태를 관리합니다. `src/api/client.ts`에는 Spring Boot 연동을 고려한 Bearer Token interceptor와 401 처리도 구성되어 있습니다.
+현재 직원·조직·역할·신청·결재·공지 데이터와 로그 조회는 MSW가 제공하는 REST API로 동작합니다. 변경 가능한 데이터는 브라우저 `localStorage`에 유지됩니다. 화면에서는 Axios로 API를 호출하고 TanStack Query로 조회, 캐시 무효화, Loading/Error 상태를 관리합니다. `src/api/client.ts`에는 Spring Boot 연동을 고려한 Bearer Token interceptor와 401 처리도 구성되어 있습니다.
 
 주요 API 계약 예시는 다음과 같습니다.
 

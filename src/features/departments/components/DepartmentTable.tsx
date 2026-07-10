@@ -15,6 +15,7 @@ interface DepartmentTableProps {
     onCreateChild: (department: Department) => void;
     onEdit: (department: Department) => void;
     onDelete: (id: number) => void;
+    loading?: boolean;
 }
 
 export default function DepartmentTable({
@@ -26,12 +27,14 @@ export default function DepartmentTable({
     onCreateChild,
     onEdit,
     onDelete,
+    loading = false,
 }: DepartmentTableProps) {
     return (
         <Table<Department>
             rowKey="id"
             size="middle"
             dataSource={departments}
+            loading={loading}
             pagination={false}
             rowSelection={{ selectedRowKeys, onChange: onSelectedRowKeysChange }}
             expandable={{
