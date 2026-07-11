@@ -1,5 +1,7 @@
 # enterprise-hr-admin
 
+[![CI](https://github.com/anbeicat/enterprise-hr-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/anbeicat/enterprise-hr-admin/actions/workflows/ci.yml)
+
 React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 프론트엔드 프로젝트입니다.
 한국 기업의 사내 관리자 시스템에서 자주 사용하는 직원·조직·권한·신청·결재·근태·공지·감사 업무를 하나의 관리 화면으로 구성했습니다.
 
@@ -137,6 +139,8 @@ npm run build
 npm run lint
 npm run test
 ```
+
+GitHub Actions는 `main` Push 및 Pull Request마다 테스트, ESLint, Production Build, 의존성 보안 감사를 자동 실행하고 빌드 결과물을 Artifact로 보관합니다.
 
 ## API 연동 방향
 
