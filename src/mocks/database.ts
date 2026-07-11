@@ -10,6 +10,8 @@ import { initialNotices } from "../features/notices/mockData";
 import type { Notice } from "../features/notices/types";
 import { initialCodes } from "../features/codes/mockData";
 import type { CodeItem } from "../features/codes/types";
+import { initialLogs } from "../features/logs/mockData";
+import type { LogRecord } from "../features/logs/types";
 
 const EMPLOYEES_KEY = "enterprise-hr-employees";
 const REQUESTS_KEY = "enterprise-hr-requests";
@@ -17,6 +19,7 @@ const DEPARTMENTS_KEY = "enterprise-hr-departments";
 const ROLES_KEY = "enterprise-hr-roles";
 const NOTICES_KEY = "enterprise-hr-notices";
 const CODES_KEY = "enterprise-hr-codes";
+const LOGS_KEY = "enterprise-hr-logs";
 const DATA_STORAGE_KEYS = [
     EMPLOYEES_KEY,
     REQUESTS_KEY,
@@ -24,6 +27,7 @@ const DATA_STORAGE_KEYS = [
     ROLES_KEY,
     NOTICES_KEY,
     CODES_KEY,
+    LOGS_KEY,
 ];
 
 function readStorage<T>(key: string, fallback: T): T {
@@ -52,5 +56,7 @@ export const mockDatabase = {
     saveNotices: (notices: Notice[]) => writeStorage(NOTICES_KEY, notices),
     getCodes: () => readStorage<CodeItem[]>(CODES_KEY, initialCodes),
     saveCodes: (codes: CodeItem[]) => writeStorage(CODES_KEY, codes),
+    getLogs: () => readStorage<LogRecord[]>(LOGS_KEY, initialLogs),
+    saveLogs: (logs: LogRecord[]) => writeStorage(LOGS_KEY, logs),
     reset: () => DATA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)),
 };

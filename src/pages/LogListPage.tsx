@@ -2,6 +2,7 @@ import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag } from "antd";
 import { useMemo, useState } from "react";
+import dayjs, { type Dayjs } from "dayjs";
 import PageTitle from "../components/PageTitle";
 import { getLogs } from "../features/logs/api";
 import type { LogRecord, LogType } from "../features/logs/types";
@@ -9,12 +10,14 @@ import type { LogRecord, LogType } from "../features/logs/types";
 interface SearchValues {
     user?: string;
     result?: LogRecord["result"];
+    dateRange?: [Dayjs, Dayjs];
 }
 
 export default function LogListPage({ type }: { type: LogType }) {
     const { data: logs = [], isLoading, isError } = useQuery({
         queryKey: ["logs", type],
         queryFn: () => getLogs(type),
+        refetchOnMount: "always",
     });
     const [search, setSearch] = useState<SearchValues>({});
     const [form] = Form.useForm<SearchValues>();
@@ -23,7 +26,11 @@ export default function LogListPage({ type }: { type: LogType }) {
             logs.filter(
                 (item) =>
                     (!search.user || item.user.includes(search.user)) &&
-                    (!search.result || item.result === search.result),
+                    (!search.result || item.result === search.result) &&
+                    (!search.dateRange || (
+                        !dayjs(item.createdAt).isBefore(search.dateRange[0].startOf("day")) &&
+                        !dayjs(item.createdAt).isAfter(search.dateRange[1].endOf("day"))
+                    )),
             ),
         [logs, search],
     );
@@ -41,7 +48,7 @@ export default function LogListPage({ type }: { type: LogType }) {
                     <Form.Item label="결과" name="result">
                         <Select allowClear style={{ width: 140 }} options={[{ label: "성공", value: "SUCCESS" }, { label: "실패", value: "FAIL" }]} />
                     </Form.Item>
-                    <Form.Item label="기간"><DatePicker.RangePicker /></Form.Item>
+                    <Form.Item label="기간" name="dateRange"><DatePicker.RangePicker /></Form.Item>
                     <Form.Item>
                         <Space>
                             <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>검색</Button>
@@ -63,7 +70,7 @@ export default function LogListPage({ type }: { type: LogType }) {
                     rowKey="id"
                     loading={isLoading}
                     dataSource={filteredLogs}
-                    pagination={false}
+                    pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `총 ${total}건` }}
                     columns={[
                         { title: "사용자", dataIndex: "user" },
                         { title: "모듈", dataIndex: "module" },

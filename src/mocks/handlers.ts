@@ -11,7 +11,6 @@ import {
 } from "../features/departments/utils";
 import type { RoleFormValues } from "../features/roles/types";
 import type { NoticeFormValues } from "../features/notices/types";
-import { initialLogs } from "../features/logs/mockData";
 import type { LogType } from "../features/logs/types";
 import { initialMenus } from "../features/menus/mockData";
 import type { CodePayload } from "../features/codes/types";
@@ -19,6 +18,7 @@ import { initialAttendance } from "../features/attendance/mockData";
 import { getAccountFromRequest, requireAuthentication, requirePermission } from "./auth";
 import { DEMO_ACCOUNTS } from "../auth/accounts";
 import type { LoginPayload } from "../api/auth";
+import { recordLog } from "./audit";
 
 const API_DELAY = 250;
 
@@ -29,6 +29,7 @@ export const handlers = [
         const account = DEMO_ACCOUNTS[values.username];
 
         if (!account || account.password !== values.password) {
+            recordLog({ request, user: values.username || "unknown", type: "login", module: "로그인", action: "아이디 또는 비밀번호 불일치", result: "FAIL" });
             return HttpResponse.json(
                 { message: "아이디 또는 비밀번호가 올바르지 않습니다." },
                 { status: 401 },
@@ -36,12 +37,14 @@ export const handlers = [
         }
 
         if (values.code.trim() !== "1") {
+            recordLog({ request, user: values.username, type: "login", module: "로그인", action: "인증번호 불일치", result: "FAIL" });
             return HttpResponse.json(
                 { message: "인증번호가 올바르지 않습니다." },
                 { status: 400 },
             );
         }
 
+        recordLog({ request, user: account.username, type: "login", module: "로그인", action: "Chrome / Web", result: "SUCCESS" });
         return HttpResponse.json({
             username: account.username,
             role: account.role,
@@ -113,6 +116,7 @@ export const handlers = [
             ...values,
         };
         mockDatabase.saveEmployees([employee, ...employees]);
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `직원 ${employee.employeeNo} 등록` });
         return HttpResponse.json(employee, { status: 201 });
     }),
 
@@ -127,6 +131,7 @@ export const handlers = [
         if (!employee) return HttpResponse.json({ message: "직원을 찾을 수 없습니다." }, { status: 404 });
         const updated = { ...employee, ...values };
         mockDatabase.saveEmployees(employees.map((item) => (item.id === id ? updated : item)));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `직원 ${updated.employeeNo} 정보 수정` });
         return HttpResponse.json(updated);
     }),
 
@@ -135,7 +140,10 @@ export const handlers = [
         if (denied) return denied;
         await delay(API_DELAY);
         const id = Number(params.id);
-        mockDatabase.saveEmployees(mockDatabase.getEmployees().filter((item) => item.id !== id));
+        const employees = mockDatabase.getEmployees();
+        const employee = employees.find((item) => item.id === id);
+        mockDatabase.saveEmployees(employees.filter((item) => item.id !== id));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `직원 ${employee?.employeeNo ?? id} 삭제` });
         return new HttpResponse(null, { status: 204 });
     }),
 
@@ -172,6 +180,7 @@ export const handlers = [
             department: account.department,
         };
         mockDatabase.saveRequests([record, ...requests]);
+        recordLog({ request, user: account.username, module: "신청 관리", action: `${record.requestNo} 신청 제출` });
         return HttpResponse.json(record, { status: 201 });
     }),
 
@@ -195,6 +204,7 @@ export const handlers = [
         }
         const updated = { ...record, status, approvalComment: body.comment };
         mockDatabase.saveRequests(requests.map((item) => (item.id === id ? updated : item)));
+        recordLog({ request, user: account.username, module: "전자결재", action: `${record.requestNo} ${status === "APPROVED" ? "승인" : "반려"}` });
         return HttpResponse.json(updated);
     }),
 
@@ -217,6 +227,7 @@ export const handlers = [
             ...values,
         };
         mockDatabase.saveDepartments(addDepartmentToTree(departments, department));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "조직 관리", action: `조직 ${department.name} 등록` });
         return HttpResponse.json(department, { status: 201 });
     }),
 
@@ -231,6 +242,7 @@ export const handlers = [
         if (!current) return HttpResponse.json({ message: "조직을 찾을 수 없습니다." }, { status: 404 });
         const updated = { ...current, ...values };
         mockDatabase.saveDepartments(updateDepartmentTree(departments, updated));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "조직 관리", action: `조직 ${updated.name} 수정` });
         return HttpResponse.json(updated);
     }),
 
@@ -239,7 +251,9 @@ export const handlers = [
         if (denied) return denied;
         await delay(API_DELAY);
         const id = Number(params.id);
+        const department = flattenDepartments(mockDatabase.getDepartments()).find((item) => item.id === id);
         mockDatabase.saveDepartments(removeDepartmentsFromTree(mockDatabase.getDepartments(), new Set([id])));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "조직 관리", action: `조직 ${department?.name ?? id} 삭제` });
         return new HttpResponse(null, { status: 204 });
     }),
 
@@ -258,6 +272,7 @@ export const handlers = [
         const roles = mockDatabase.getRoles();
         const role = { id: Math.max(0, ...roles.map((item) => item.id)) + 1, ...values };
         mockDatabase.saveRoles([...roles, role]);
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "역할 관리", action: `역할 ${role.name} 등록` });
         return HttpResponse.json(role, { status: 201 });
     }),
 
@@ -272,6 +287,7 @@ export const handlers = [
         if (!role) return HttpResponse.json({ message: "역할을 찾을 수 없습니다." }, { status: 404 });
         const updated = { ...role, ...values };
         mockDatabase.saveRoles(roles.map((item) => (item.id === id ? updated : item)));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "역할 관리", action: `역할 ${updated.name} 수정` });
         return HttpResponse.json(updated);
     }),
 
@@ -280,7 +296,10 @@ export const handlers = [
         if (denied) return denied;
         await delay(API_DELAY);
         const id = Number(params.id);
-        mockDatabase.saveRoles(mockDatabase.getRoles().filter((item) => item.id !== id));
+        const roles = mockDatabase.getRoles();
+        const role = roles.find((item) => item.id === id);
+        mockDatabase.saveRoles(roles.filter((item) => item.id !== id));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "역할 관리", action: `역할 ${role?.name ?? id} 삭제` });
         return new HttpResponse(null, { status: 204 });
     }),
 
@@ -305,6 +324,7 @@ export const handlers = [
             ...values,
         };
         mockDatabase.saveNotices([notice, ...notices]);
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "공지 관리", action: `공지 ${notice.title} 등록` });
         return HttpResponse.json(notice, { status: 201 });
     }),
 
@@ -319,6 +339,7 @@ export const handlers = [
         if (!notice) return HttpResponse.json({ message: "공지사항을 찾을 수 없습니다." }, { status: 404 });
         const updated = { ...notice, ...values };
         mockDatabase.saveNotices(notices.map((item) => (item.id === id ? updated : item)));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "공지 관리", action: `공지 ${updated.title} 수정` });
         return HttpResponse.json(updated);
     }),
 
@@ -327,7 +348,10 @@ export const handlers = [
         if (denied) return denied;
         await delay(API_DELAY);
         const id = Number(params.id);
-        mockDatabase.saveNotices(mockDatabase.getNotices().filter((item) => item.id !== id));
+        const notices = mockDatabase.getNotices();
+        const notice = notices.find((item) => item.id === id);
+        mockDatabase.saveNotices(notices.filter((item) => item.id !== id));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "공지 관리", action: `공지 ${notice?.title ?? id} 삭제` });
         return new HttpResponse(null, { status: 204 });
     }),
 
@@ -336,7 +360,7 @@ export const handlers = [
         if (denied) return denied;
         await delay(API_DELAY);
         const type = new URL(request.url).searchParams.get("type") as LogType;
-        return HttpResponse.json(initialLogs.filter((item) => item.type === type));
+        return HttpResponse.json(mockDatabase.getLogs().filter((item) => item.type === type));
     }),
 
     http.get("/api/menus", async ({ request }) => {
@@ -361,6 +385,7 @@ export const handlers = [
         const codes = mockDatabase.getCodes();
         const code = { id: Math.max(0, ...codes.map((item) => item.id)) + 1, ...values };
         mockDatabase.saveCodes([...codes, code]);
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "코드 관리", action: `코드 ${code.name} 등록` });
         return HttpResponse.json(code, { status: 201 });
     }),
 
@@ -369,7 +394,10 @@ export const handlers = [
         if (denied) return denied;
         await delay(API_DELAY);
         const id = Number(params.id);
-        mockDatabase.saveCodes(mockDatabase.getCodes().filter((item) => item.id !== id));
+        const codes = mockDatabase.getCodes();
+        const code = codes.find((item) => item.id === id);
+        mockDatabase.saveCodes(codes.filter((item) => item.id !== id));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "코드 관리", action: `코드 ${code?.name ?? id} 삭제` });
         return new HttpResponse(null, { status: 204 });
     }),
 
@@ -385,6 +413,7 @@ export const handlers = [
         if (denied) return denied;
         await delay(API_DELAY);
         mockDatabase.reset();
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "시스템 관리", action: "데모 데이터 초기화" });
         return HttpResponse.json({ success: true });
     }),
 ];

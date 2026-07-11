@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mockDatabase } from "./database";
 import { getAccountFromRequest, requirePermission } from "./auth";
 
 function createRequest(username?: string) {
@@ -10,6 +11,15 @@ function createRequest(username?: string) {
 }
 
 describe("mock API authorization", () => {
+    beforeEach(() => {
+        const storage = new Map<string, string>();
+        vi.stubGlobal("localStorage", {
+            getItem: (key: string) => storage.get(key) ?? null,
+            setItem: (key: string, value: string) => storage.set(key, value),
+            removeItem: (key: string) => storage.delete(key),
+        });
+    });
+
     it("resolves the account from a valid bearer token", () => {
         expect(getAccountFromRequest(createRequest("manager"))).toMatchObject({
             role: "DEPT_MANAGER",
@@ -25,6 +35,11 @@ describe("mock API authorization", () => {
         expect(
             requirePermission(createRequest("employee"), "employee:write")?.status,
         ).toBe(403);
+        expect(mockDatabase.getLogs()[0]).toMatchObject({
+            user: "employee",
+            module: "권한 관리",
+            result: "FAIL",
+        });
     });
 
     it("allows authorized operations", () => {
