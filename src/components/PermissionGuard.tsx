@@ -13,6 +13,6 @@ export default function PermissionGuard({
     children,
     fallback = null,
 }: PermissionGuardProps) {
-    const role = useAppSelector((state) => state.auth.role);
-    return hasPermission(role, permission) ? children : fallback;
+    const permissions = useAppSelector((state) => state.auth.permissions);
+    return hasPermission(permissions, permission) ? children : fallback;
 }

@@ -46,23 +46,25 @@ export default function HeaderBar({
     const [searchOpen, setSearchOpen] = useState(false);
     const [searchKeyword, setSearchKeyword] = useState("");
 
-    const { username = "admin", role = "ADMIN" } = useAppSelector((state) => state.auth);
+    const { username = "admin", role = "ADMIN", permissions } = useAppSelector((state) => state.auth);
     const { data: dashboard } = useQuery({
         queryKey: ["dashboard"],
         queryFn: getDashboardSummary,
     });
     const searchableRoutes = useMemo(
         () => Object.entries(ROUTE_META)
-            .filter(([path]) => path !== "/403" && canAccessRoute(role, path))
+            .filter(([path]) => path !== "/403" && canAccessRoute(permissions, path))
             .filter(([, meta]) => !searchKeyword || `${meta.title} ${meta.breadcrumb}`.toLowerCase().includes(searchKeyword.toLowerCase())),
-        [role, searchKeyword],
+        [permissions, searchKeyword],
     );
 
     const handleLogout = () => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("username");
         localStorage.removeItem("role");
+        localStorage.removeItem("permissions");
         dispatch(logout());
+        queryClient.clear();
         navigate("/login");
     };
 

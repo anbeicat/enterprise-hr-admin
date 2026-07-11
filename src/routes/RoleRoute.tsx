@@ -9,6 +9,6 @@ interface RoleRouteProps {
 }
 
 export default function RoleRoute({ path, children }: RoleRouteProps) {
-    const role = useAppSelector((state) => state.auth.role);
-    return canAccessRoute(role, path) ? children : <Navigate to="/403" replace />;
+    const permissions = useAppSelector((state) => state.auth.permissions);
+    return canAccessRoute(permissions, path) ? children : <Navigate to="/403" replace />;
 }

@@ -146,16 +146,16 @@ const menuItems: MenuItem[] = [
 export default function SidebarMenu() {
     const navigate = useNavigate();
     const location = useLocation();
-    const role = useAppSelector((state) => state.auth.role);
+    const permissions = useAppSelector((state) => state.auth.permissions);
     const visibleItems = menuItems.flatMap((item): MenuItem[] => {
         if (!item || !("key" in item)) return [];
         if ("children" in item && Array.isArray(item.children)) {
             const children = (item.children as MenuItem[]).filter(
-                (child) => child && "key" in child && canAccessRoute(role, String(child.key)),
+                (child) => child && "key" in child && canAccessRoute(permissions, String(child.key)),
             );
             return children.length > 0 ? [{ ...item, children } as MenuItem] : [];
         }
-        return canAccessRoute(role, String(item.key)) ? [item] : [];
+        return canAccessRoute(permissions, String(item.key)) ? [item] : [];
     });
 
     return (

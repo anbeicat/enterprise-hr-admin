@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mockDatabase } from "./database";
-import { getAccountFromRequest, requirePermission } from "./auth";
+import { getAccountFromRequest, requireAuthentication, requirePermission } from "./auth";
 
 function createRequest(username?: string) {
     return new Request("http://localhost/api/employees", {
@@ -45,5 +45,24 @@ describe("mock API authorization", () => {
     it("allows authorized operations", () => {
         expect(requirePermission(createRequest("hr"), "employee:write")).toBeNull();
         expect(requirePermission(createRequest("admin"), "role:manage")).toBeNull();
+    });
+
+    it("uses the persisted role configuration instead of a hardcoded map", () => {
+        const roles = mockDatabase.getRoles();
+        mockDatabase.saveRoles(roles.map((role) =>
+            role.code === "EMPLOYEE"
+                ? { ...role, permissions: [...role.permissions, "employee:read"] }
+                : role,
+        ));
+
+        expect(requirePermission(createRequest("employee"), "employee:read")).toBeNull();
+    });
+
+    it("rejects sessions whose role has been disabled", () => {
+        mockDatabase.saveRoles(mockDatabase.getRoles().map((role) =>
+            role.code === "EMPLOYEE" ? { ...role, status: "DISABLED" } : role,
+        ));
+
+        expect(requireAuthentication(createRequest("employee"))?.status).toBe(403);
     });
 });

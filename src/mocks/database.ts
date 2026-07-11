@@ -16,7 +16,7 @@ import type { LogRecord } from "../features/logs/types";
 const EMPLOYEES_KEY = "enterprise-hr-employees";
 const REQUESTS_KEY = "enterprise-hr-requests";
 const DEPARTMENTS_KEY = "enterprise-hr-departments";
-const ROLES_KEY = "enterprise-hr-roles";
+const ROLES_KEY = "enterprise-hr-roles-v2";
 const NOTICES_KEY = "enterprise-hr-notices";
 const CODES_KEY = "enterprise-hr-codes";
 const LOGS_KEY = "enterprise-hr-logs";

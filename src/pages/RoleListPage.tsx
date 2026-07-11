@@ -19,14 +19,8 @@ import { useState } from "react";
 import PageTitle from "../components/PageTitle";
 import { createRole, deleteRole, getRoles, updateRole } from "../features/roles/api";
 import type { Role, RoleFormValues } from "../features/roles/types";
-
-const permissionOptions = [
-    { label: "직원 조회", value: "employee:list" },
-    { label: "직원 등록/수정", value: "employee:write" },
-    { label: "조직 관리", value: "department:write" },
-    { label: "결재 승인/반려", value: "approval:process" },
-    { label: "감사 로그 조회", value: "audit:list" },
-];
+import { PERMISSION_OPTIONS } from "../auth/access";
+import axios from "axios";
 
 export default function RoleListPage() {
     const queryClient = useQueryClient();
@@ -62,14 +56,21 @@ export default function RoleListPage() {
 
     const submit = async () => {
         const values = await form.validateFields();
-        if (editing) {
-            await updateMutation.mutateAsync({ id: editing.id, values });
-            message.success("역할 정보가 수정되었습니다.");
-        } else {
-            await createMutation.mutateAsync(values);
-            message.success("역할이 등록되었습니다.");
+        try {
+            if (editing) {
+                await updateMutation.mutateAsync({ id: editing.id, values });
+                message.success("역할 정보가 수정되었습니다.");
+            } else {
+                await createMutation.mutateAsync(values);
+                message.success("역할이 등록되었습니다.");
+            }
+            setOpen(false);
+        } catch (error) {
+            const apiMessage = axios.isAxiosError<{ message?: string }>(error)
+                ? error.response?.data.message
+                : undefined;
+            message.error(apiMessage ?? "역할 정보를 저장하지 못했습니다.");
         }
-        setOpen(false);
     };
 
     return (
@@ -102,7 +103,7 @@ export default function RoleListPage() {
                             title: "관리",
                             render: (_, role) => (
                                 <Space>
-                                    <Button type="link" icon={<EditOutlined />} onClick={() => openModal(role)}>
+                                    <Button type="link" icon={<EditOutlined />} disabled={role.code === "ADMIN"} onClick={() => openModal(role)}>
                                         수정
                                     </Button>
                                     <Popconfirm
@@ -114,7 +115,7 @@ export default function RoleListPage() {
                                             message.success("역할이 삭제되었습니다.");
                                         }}
                                     >
-                                        <Button type="link" danger icon={<DeleteOutlined />} disabled={role.code === "ADMIN"}>
+                                        <Button type="link" danger icon={<DeleteOutlined />} disabled={["ADMIN", "HR_MANAGER", "DEPT_MANAGER", "EMPLOYEE"].includes(role.code)}>
                                             삭제
                                         </Button>
                                     </Popconfirm>
@@ -143,7 +144,12 @@ export default function RoleListPage() {
                         <Input disabled={Boolean(editing)} />
                     </Form.Item>
                     <Form.Item label="설명" name="description"><Input /></Form.Item>
-                    <Form.Item label="업무 권한" name="permissions"><Checkbox.Group options={permissionOptions} /></Form.Item>
+                    <Form.Item label="업무 권한" name="permissions">
+                        <Checkbox.Group
+                            options={PERMISSION_OPTIONS}
+                            style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}
+                        />
+                    </Form.Item>
                     <Form.Item label="상태" name="status">
                         <Select options={[{ label: "정상", value: "ACTIVE" }, { label: "사용 중지", value: "DISABLED" }]} />
                     </Form.Item>

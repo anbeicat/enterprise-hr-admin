@@ -40,6 +40,7 @@ export default function LoginPage() {
             localStorage.setItem("accessToken", session.token);
             localStorage.setItem("username", session.username);
             localStorage.setItem("role", session.role);
+            localStorage.setItem("permissions", JSON.stringify(session.permissions));
 
             if (values.remember) {
                 localStorage.setItem("rememberedUsername", values.username);

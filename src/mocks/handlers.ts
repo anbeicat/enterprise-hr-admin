@@ -47,11 +47,38 @@ export const handlers = [
             );
         }
 
+        const role = mockDatabase.getRoles().find((item) => item.code === account.role);
+        if (!role || role.status !== "ACTIVE") {
+            recordLog({ request, user: account.username, type: "login", module: "로그인", action: "사용 중지된 역할", result: "FAIL" });
+            return HttpResponse.json(
+                { message: "현재 계정 역할이 사용 중지 상태입니다." },
+                { status: 403 },
+            );
+        }
+
         recordLog({ request, user: account.username, type: "login", module: "로그인", action: "Chrome / Web", result: "SUCCESS" });
         return HttpResponse.json({
             username: account.username,
             role: account.role,
             token: `mock-token-${account.username}`,
+            permissions: role.permissions,
+        });
+    }),
+
+    http.get("/api/auth/me", async ({ request }) => {
+        await delay(API_DELAY);
+        const account = getAccountFromRequest(request);
+        const role = account
+            ? mockDatabase.getRoles().find((item) => item.code === account.role)
+            : null;
+        if (!account || !role || role.status !== "ACTIVE") {
+            return HttpResponse.json({ message: "로그인 세션이 유효하지 않습니다." }, { status: 401 });
+        }
+        return HttpResponse.json({
+            username: account.username,
+            role: account.role,
+            token: `mock-token-${account.username}`,
+            permissions: role.permissions,
         });
     }),
 
@@ -324,6 +351,9 @@ export const handlers = [
         await delay(API_DELAY);
         const values = (await request.json()) as RoleFormValues;
         const roles = mockDatabase.getRoles();
+        if (roles.some((item) => item.code.toLowerCase() === values.code.toLowerCase())) {
+            return HttpResponse.json({ message: "이미 등록된 역할 코드입니다." }, { status: 409 });
+        }
         const role = { id: Math.max(0, ...roles.map((item) => item.id)) + 1, ...values };
         mockDatabase.saveRoles([...roles, role]);
         recordLog({ request, user: getAccountFromRequest(request)!.username, module: "역할 관리", action: `역할 ${role.name} 등록` });
@@ -339,6 +369,9 @@ export const handlers = [
         const roles = mockDatabase.getRoles();
         const role = roles.find((item) => item.id === id);
         if (!role) return HttpResponse.json({ message: "역할을 찾을 수 없습니다." }, { status: 404 });
+        if (role.code === "ADMIN") {
+            return HttpResponse.json({ message: "시스템 관리자 역할은 수정할 수 없습니다." }, { status: 409 });
+        }
         const updated = { ...role, ...values };
         mockDatabase.saveRoles(roles.map((item) => (item.id === id ? updated : item)));
         recordLog({ request, user: getAccountFromRequest(request)!.username, module: "역할 관리", action: `역할 ${updated.name} 수정` });
@@ -352,6 +385,10 @@ export const handlers = [
         const id = Number(params.id);
         const roles = mockDatabase.getRoles();
         const role = roles.find((item) => item.id === id);
+        if (!role) return HttpResponse.json({ message: "역할을 찾을 수 없습니다." }, { status: 404 });
+        if (Object.values(DEMO_ACCOUNTS).some((account) => account.role === role.code)) {
+            return HttpResponse.json({ message: "데모 계정에서 사용하는 기본 역할은 삭제할 수 없습니다." }, { status: 409 });
+        }
         mockDatabase.saveRoles(roles.filter((item) => item.id !== id));
         recordLog({ request, user: getAccountFromRequest(request)!.username, module: "역할 관리", action: `역할 ${role?.name ?? id} 삭제` });
         return new HttpResponse(null, { status: 204 });

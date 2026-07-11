@@ -18,11 +18,16 @@ apiClient.interceptors.response.use(
             localStorage.removeItem("accessToken");
             localStorage.removeItem("username");
             localStorage.removeItem("role");
+            localStorage.removeItem("permissions");
             if (window.location.pathname !== "/login") {
                 window.location.assign("/login");
             }
         }
-        if (error.response?.status === 403 && window.location.pathname !== "/403") {
+        if (
+            error.response?.status === 403 &&
+            window.location.pathname !== "/403" &&
+            window.location.pathname !== "/login"
+        ) {
             window.location.assign("/403");
         }
         return Promise.reject(error);

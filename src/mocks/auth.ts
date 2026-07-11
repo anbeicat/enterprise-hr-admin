@@ -1,8 +1,8 @@
 import { HttpResponse } from "msw";
 import { DEMO_ACCOUNTS } from "../auth/accounts";
 import { hasPermission, type Permission } from "../auth/access";
-import type { UserRole } from "../store/authSlice";
 import { recordLog } from "./audit";
+import { mockDatabase } from "./database";
 
 export function getAccountFromRequest(request: Request) {
     const authorization = request.headers.get("Authorization");
@@ -16,12 +16,13 @@ export function requirePermission(request: Request, ...permissions: Permission[]
     const unauthorized = requireAuthentication(request);
     if (unauthorized) return unauthorized;
 
-    const role: UserRole = getAccountFromRequest(request)!.role;
+    const account = getAccountFromRequest(request)!;
+    const role = mockDatabase.getRoles().find((item) => item.code === account.role)!;
 
-    if (!permissions.some((permission) => hasPermission(role, permission))) {
+    if (!permissions.some((permission) => hasPermission(role.permissions, permission))) {
         recordLog({
             request,
-            user: getAccountFromRequest(request)!.username,
+            user: account.username,
             module: "권한 관리",
             action: `권한 없는 API 접근: ${permissions.join(", ")}`,
             result: "FAIL",
@@ -42,6 +43,14 @@ export function requireAuthentication(request: Request) {
         return HttpResponse.json(
             { message: "로그인이 필요합니다." },
             { status: 401 },
+        );
+    }
+
+    const role = mockDatabase.getRoles().find((item) => item.code === account.role);
+    if (!role || role.status !== "ACTIVE") {
+        return HttpResponse.json(
+            { message: "사용할 수 없는 역할입니다." },
+            { status: 403 },
         );
     }
 

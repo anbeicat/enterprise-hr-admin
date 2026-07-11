@@ -16,7 +16,7 @@ export type Permission =
     | "log:read"
     | "demo:reset";
 
-const ALL_PERMISSIONS: Permission[] = [
+export const ALL_PERMISSIONS: Permission[] = [
     "employee:read",
     "employee:write",
     "department:read",
@@ -31,6 +31,23 @@ const ALL_PERMISSIONS: Permission[] = [
     "notice:manage",
     "log:read",
     "demo:reset",
+];
+
+export const PERMISSION_OPTIONS: { label: string; value: Permission }[] = [
+    { label: "직원 조회", value: "employee:read" },
+    { label: "직원 등록/수정/삭제", value: "employee:write" },
+    { label: "조직 조회", value: "department:read" },
+    { label: "조직 등록/수정/삭제", value: "department:write" },
+    { label: "역할 관리", value: "role:manage" },
+    { label: "메뉴 관리", value: "menu:manage" },
+    { label: "공통 코드 관리", value: "code:manage" },
+    { label: "휴가/연장근무/출장 신청", value: "request:create" },
+    { label: "결재 승인/반려", value: "approval:process" },
+    { label: "근태 조회", value: "attendance:read" },
+    { label: "공지 조회", value: "notice:read" },
+    { label: "공지 등록/수정/삭제", value: "notice:manage" },
+    { label: "감사/로그인 로그 조회", value: "log:read" },
+    { label: "데모 데이터 초기화", value: "demo:reset" },
 ];
 
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
@@ -76,12 +93,12 @@ export const ROUTE_PERMISSIONS: Record<string, Permission | undefined> = {
     "/logs/login": "log:read",
 };
 
-export function hasPermission(role: UserRole | null, permission: Permission) {
-    return role ? ROLE_PERMISSIONS[role].includes(permission) : false;
+export function hasPermission(permissions: readonly Permission[] | null, permission: Permission) {
+    return permissions?.includes(permission) ?? false;
 }
 
-export function canAccessRoute(role: UserRole | null, path: string) {
+export function canAccessRoute(permissions: readonly Permission[] | null, path: string) {
     if (path === "/dashboard" || path === "/403") return true;
     const permission = ROUTE_PERMISSIONS[path];
-    return permission ? hasPermission(role, permission) : false;
+    return permission ? hasPermission(permissions, permission) : false;
 }
