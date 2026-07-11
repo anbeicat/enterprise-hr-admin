@@ -16,7 +16,7 @@ import type { LogType } from "../features/logs/types";
 import { initialMenus } from "../features/menus/mockData";
 import type { CodePayload } from "../features/codes/types";
 import { initialAttendance } from "../features/attendance/mockData";
-import { getAccountFromRequest, requirePermission } from "./auth";
+import { getAccountFromRequest, requireAuthentication, requirePermission } from "./auth";
 import { DEMO_ACCOUNTS } from "../auth/accounts";
 import type { LoginPayload } from "../api/auth";
 
@@ -46,6 +46,46 @@ export const handlers = [
             username: account.username,
             role: account.role,
             token: `mock-token-${account.username}`,
+        });
+    }),
+
+    http.get("/api/dashboard", async ({ request }) => {
+        const denied = requireAuthentication(request);
+        if (denied) return denied;
+        await delay(API_DELAY);
+
+        const account = getAccountFromRequest(request)!;
+        const employees = mockDatabase.getEmployees();
+        const allRequests = mockDatabase.getRequests();
+        const visibleRequests = account.role === "EMPLOYEE"
+            ? allRequests.filter((item) => item.requester === account.displayName)
+            : account.role === "DEPT_MANAGER"
+                ? allRequests.filter((item) => item.department === account.department)
+                : allRequests;
+        const attendanceByDepartment = new Map<string, { present: number; total: number }>();
+
+        initialAttendance.forEach((item) => {
+            const summary = attendanceByDepartment.get(item.department) ?? { present: 0, total: 0 };
+            summary.total += 1;
+            if (item.status !== "LEAVE") summary.present += 1;
+            attendanceByDepartment.set(item.department, summary);
+        });
+
+        return HttpResponse.json({
+            totalEmployees: employees.filter((item) => item.status === "ACTIVE").length,
+            pendingApprovals: visibleRequests.filter((item) => item.status === "PENDING").length,
+            todayPresent: initialAttendance.filter((item) => item.status !== "LEAVE").length,
+            monthlyLeave: visibleRequests.filter((item) => item.type === "LEAVE").length,
+            pendingRequests: visibleRequests
+                .filter((item) => item.status === "PENDING")
+                .slice(0, 5),
+            departmentAttendance: Array.from(attendanceByDepartment, ([department, value]) => ({
+                department,
+                percent: Math.round((value.present / value.total) * 100),
+            })),
+            recentNotices: [...mockDatabase.getNotices()]
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+                .slice(0, 5),
         });
     }),
 

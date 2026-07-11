@@ -1,78 +1,77 @@
-/*
- * @Author: anqiao anqiao10@gmail.com
- * @Date: 2026-06-08 15:18:17
- * @LastEditors: anqiao anqiao10@gmail.com
- * @LastEditTime: 2026-06-08 15:24:18
- * @description: dashboard 页面
- * @FilePath: /enterprise-hr-admin/src/pages/DashboardPage.tsx
- */
-import { Card, Col, Progress, Row, Statistic, Table, Tag, Typography } from "antd";
+import { Alert, Card, Col, Progress, Row, Statistic, Table, Tag, Typography } from "antd";
+import { useQuery } from "@tanstack/react-query";
+import { getDashboardSummary } from "../features/dashboard/api";
+import { REQUEST_TYPE_TEXT, type RequestRecord } from "../features/requests/types";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 export default function DashboardPage() {
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ["dashboard"],
+        queryFn: getDashboardSummary,
+    });
+
     return (
         <div>
             <Title level={4}>대시보드</Title>
+            {isError && (
+                <Alert
+                    type="error"
+                    showIcon
+                    message="대시보드 정보를 불러오지 못했습니다."
+                    style={{ marginBottom: 16 }}
+                />
+            )}
 
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
-                        <Statistic title="전체 직원" value={128} suffix="명" />
-                    </Card>
+                    <Card loading={isLoading}><Statistic title="재직 직원" value={data?.totalEmployees ?? 0} suffix="명" /></Card>
                 </Col>
-
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
-                        <Statistic title="결재 대기" value={12} suffix="건" />
-                    </Card>
+                    <Card loading={isLoading}><Statistic title="결재 대기" value={data?.pendingApprovals ?? 0} suffix="건" /></Card>
                 </Col>
-
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
-                        <Statistic title="금일 출근" value={96} suffix="명" />
-                    </Card>
+                    <Card loading={isLoading}><Statistic title="금일 출근" value={data?.todayPresent ?? 0} suffix="명" /></Card>
                 </Col>
-
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
-                        <Statistic title="이번 달 휴가" value={18} suffix="건" />
-                    </Card>
+                    <Card loading={isLoading}><Statistic title="휴가 신청" value={data?.monthlyLeave ?? 0} suffix="건" /></Card>
                 </Col>
             </Row>
 
             <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-                <Col xs={24} lg={16}>
+                <Col xs={24} xl={16}>
                     <Card title="결재 대기 현황">
-                        <Table
+                        <Table<RequestRecord>
                             rowKey="id"
                             size="small"
+                            loading={isLoading}
                             pagination={false}
-                            dataSource={[
-                                { id: 1, type: "휴가", title: "7월 연차 신청", requester: "김민수", date: "2026-07-10" },
-                                { id: 2, type: "출장", title: "부산 고객사 방문", requester: "이지은", date: "2026-07-10" },
-                            ]}
+                            dataSource={data?.pendingRequests ?? []}
                             columns={[
-                                { title: "유형", dataIndex: "type", render: (value) => <Tag color="blue">{value}</Tag> },
+                                { title: "유형", render: (_, item) => <Tag color="blue">{REQUEST_TYPE_TEXT[item.type]}</Tag> },
                                 { title: "제목", dataIndex: "title" },
                                 { title: "신청자", dataIndex: "requester" },
-                                { title: "신청일", dataIndex: "date" },
+                                { title: "신청일", dataIndex: "createdAt" },
                             ]}
                         />
                     </Card>
                 </Col>
-                <Col xs={24} lg={8}>
-                    <Card title="부서별 출근율">
-                        <div>개발본부<Progress percent={96} /></div>
-                        <div>경영지원본부<Progress percent={93} /></div>
-                        <div>영업본부<Progress percent={91} /></div>
+                <Col xs={24} xl={8}>
+                    <Card title="부서별 출근율" loading={isLoading}>
+                        {(data?.departmentAttendance ?? []).map((item) => (
+                            <div key={item.department} style={{ marginBottom: 12 }}>
+                                <Text>{item.department}</Text>
+                                <Progress percent={item.percent} size="small" />
+                            </div>
+                        ))}
                     </Card>
                 </Col>
                 <Col span={24}>
-                    <Card title="최근 공지사항">
-                        {["2026년 하계 휴가 운영 안내", "전자결재 시스템 정기 점검", "7월 급여 지급 일정 안내"].map((item) => (
-                            <div key={item} style={{ padding: "10px 0", borderBottom: "1px solid #f0f0f0" }}>
-                                {item}
+                    <Card title="최근 공지사항" loading={isLoading}>
+                        {(data?.recentNotices ?? []).map((item) => (
+                            <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "10px 0", borderBottom: "1px solid #f0f0f0" }}>
+                                <Text>{item.pinned && <Tag color="red">공지</Tag>}{item.title}</Text>
+                                <Text type="secondary">{item.createdAt}</Text>
                             </div>
                         ))}
                     </Card>

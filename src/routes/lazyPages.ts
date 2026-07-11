@@ -8,6 +8,7 @@ export const DashboardPage = lazy(() => import("../pages/DashboardPage"));
 export const DepartmentListPage = lazy(() => import("../pages/DepartmentListPage"));
 export const EmployeeListPage = lazy(() => import("../pages/EmployeeListPage"));
 export const ForbiddenPage = lazy(() => import("../pages/ForbiddenPage"));
+export const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 export const LogListPage = lazy(() => import("../pages/LogListPage"));
 export const LoginPage = lazy(() => import("../pages/LoginPage"));
 export const MenuListPage = lazy(() => import("../pages/MenuListPage"));

@@ -16,7 +16,9 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - Mock API 단계의 Bearer Token 및 역할 권한 검증
 - 일반 직원 본인·부서장 소속 부서 기준의 결재 데이터 범위 제어
 - 권한 없는 접근을 안내하는 403 화면
+- 인증 상태 기반 Guest Route와 잘못된 주소를 안내하는 404 화면
 - Sidebar, Header, Breadcrumb, TagsView, Footer
+- 권한 범위를 반영한 전역 메뉴 검색, 공지 알림, 전체 화면, GitHub 연결
 - 보호 라우트 및 로그아웃
 - 관리자용 데모 데이터 초기화
 - 전역 오류 복구 화면
@@ -51,7 +53,8 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 공지사항 등록, 수정, 삭제, 상단 고정
 - 공지사항 REST API 저장과 캐시 갱신
 - 감사 로그 및 로그인 로그 API 조회·검색
-- Dashboard 결재 현황, 출근율, 최근 공지
+- 역할별 데이터 범위를 반영한 Dashboard 집계 API
+- Dashboard 결재 현황, 출근율, 최근 공지 실시간 연동
 
 ## 기술 스택
 

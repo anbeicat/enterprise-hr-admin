@@ -12,19 +12,28 @@ export function getAccountFromRequest(request: Request) {
 }
 
 export function requirePermission(request: Request, ...permissions: Permission[]) {
-    const role: UserRole | undefined = getAccountFromRequest(request)?.role;
+    const unauthorized = requireAuthentication(request);
+    if (unauthorized) return unauthorized;
 
-    if (!role) {
-        return HttpResponse.json(
-            { message: "로그인이 필요합니다." },
-            { status: 401 },
-        );
-    }
+    const role: UserRole = getAccountFromRequest(request)!.role;
 
     if (!permissions.some((permission) => hasPermission(role, permission))) {
         return HttpResponse.json(
             { message: "해당 작업을 수행할 권한이 없습니다." },
             { status: 403 },
+        );
+    }
+
+    return null;
+}
+
+export function requireAuthentication(request: Request) {
+    const account = getAccountFromRequest(request);
+
+    if (!account) {
+        return HttpResponse.json(
+            { message: "로그인이 필요합니다." },
+            { status: 401 },
         );
     }
 

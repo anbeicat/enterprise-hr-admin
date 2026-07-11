@@ -20,11 +20,13 @@ import {
     LogListPage,
     LoginPage,
     MenuListPage,
+    NotFoundPage,
     NoticeListPage,
     RequestListPage,
     RoleListPage,
 } from "./lazyPages";
 import RoleRoute from "./RoleRoute";
+import GuestRoute from "./GuestRoute";
 
 const authorize = (path: string, element: React.ReactNode) => (
     <RoleRoute path={path}>{element}</RoleRoute>
@@ -33,7 +35,7 @@ const authorize = (path: string, element: React.ReactNode) => (
 export const router = createBrowserRouter([
     {
         path: "/login",
-        element: <LoginPage />,
+        element: <GuestRoute><LoginPage /></GuestRoute>,
     },
     {
         path: "/",
@@ -121,7 +123,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: "*",
-                element: <Navigate to="/dashboard" replace />,
+                element: <NotFoundPage />,
             },
         ],
     },

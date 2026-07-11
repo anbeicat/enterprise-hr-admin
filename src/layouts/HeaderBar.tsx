@@ -15,12 +15,14 @@ import {
     ReloadOutlined,
     SearchOutlined,
 } from "@ant-design/icons";
-import { Avatar, Button, message, Popconfirm, Space, Tag, Typography } from "antd";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { Avatar, Badge, Button, Input, List, message, Modal, Popconfirm, Popover, Space, Tag, Tooltip, Typography } from "antd";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { resetDemoData } from "../api/system";
+import { canAccessRoute } from "../auth/access";
 import PermissionGuard from "../components/PermissionGuard";
+import { getDashboardSummary } from "../features/dashboard/api";
 import { ROUTE_META } from "../routes/routeMeta";
 import { logout } from "../store/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -41,8 +43,20 @@ export default function HeaderBar({
     const dispatch = useAppDispatch();
     const queryClient = useQueryClient();
     const [resetting, setResetting] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchKeyword, setSearchKeyword] = useState("");
 
     const { username = "admin", role = "ADMIN" } = useAppSelector((state) => state.auth);
+    const { data: dashboard } = useQuery({
+        queryKey: ["dashboard"],
+        queryFn: getDashboardSummary,
+    });
+    const searchableRoutes = useMemo(
+        () => Object.entries(ROUTE_META)
+            .filter(([path]) => path !== "/403" && canAccessRoute(role, path))
+            .filter(([, meta]) => !searchKeyword || `${meta.title} ${meta.breadcrumb}`.toLowerCase().includes(searchKeyword.toLowerCase())),
+        [role, searchKeyword],
+    );
 
     const handleLogout = () => {
         localStorage.removeItem("accessToken");
@@ -64,6 +78,24 @@ export default function HeaderBar({
         } finally {
             setResetting(false);
         }
+    };
+
+    const handleFullscreen = async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+            } else {
+                await document.documentElement.requestFullscreen();
+            }
+        } catch {
+            message.warning("현재 브라우저에서는 전체 화면을 사용할 수 없습니다.");
+        }
+    };
+
+    const openRoute = (path: string) => {
+        navigate(path);
+        setSearchOpen(false);
+        setSearchKeyword("");
     };
 
     return (
@@ -107,10 +139,41 @@ export default function HeaderBar({
                         />
                     </Popconfirm>
                 </PermissionGuard>
-                <SearchOutlined style={{ fontSize: 18, color: "#606266" }} />
-                <GithubOutlined style={{ fontSize: 18, color: "#606266" }} />
-                <FullscreenOutlined style={{ fontSize: 18, color: "#606266" }} />
-                <BellOutlined style={{ fontSize: 18, color: "#606266" }} />
+                <Tooltip title="메뉴 검색">
+                    <Button type="text" icon={<SearchOutlined />} onClick={() => setSearchOpen(true)} aria-label="메뉴 검색" />
+                </Tooltip>
+                <Tooltip title="GitHub 저장소">
+                    <Button type="text" icon={<GithubOutlined />} href="https://github.com/anbeicat/enterprise-hr-admin" target="_blank" rel="noreferrer" aria-label="GitHub 저장소" />
+                </Tooltip>
+                <Tooltip title="전체 화면">
+                    <Button type="text" icon={<FullscreenOutlined />} onClick={handleFullscreen} aria-label="전체 화면" />
+                </Tooltip>
+                <Popover
+                    trigger="click"
+                    placement="bottomRight"
+                    title="최근 공지사항"
+                    content={
+                        <div style={{ width: 320 }}>
+                            <List
+                                size="small"
+                                dataSource={dashboard?.recentNotices ?? []}
+                                renderItem={(item) => (
+                                    <List.Item>
+                                        <Text ellipsis style={{ maxWidth: 220 }}>{item.title}</Text>
+                                        <Text type="secondary">{item.createdAt}</Text>
+                                    </List.Item>
+                                )}
+                            />
+                            <Button type="link" block onClick={() => navigate("/notices")}>공지사항 전체 보기</Button>
+                        </div>
+                    }
+                >
+                    <Tooltip title="공지사항">
+                        <Badge count={dashboard?.recentNotices.length ?? 0} size="small">
+                            <Button type="text" icon={<BellOutlined />} aria-label="공지사항" />
+                        </Badge>
+                    </Tooltip>
+                </Popover>
 
                 <Avatar size="small">{username?.slice(0, 1).toUpperCase()}</Avatar>
                 <Text>{username}</Text>
@@ -120,6 +183,38 @@ export default function HeaderBar({
                     로그아웃
                 </Button>
             </Space>
+
+            <Modal
+                open={searchOpen}
+                title="메뉴 검색"
+                footer={null}
+                onCancel={() => setSearchOpen(false)}
+                width={560}
+            >
+                <Input
+                    autoFocus
+                    allowClear
+                    prefix={<SearchOutlined />}
+                    placeholder="이동할 메뉴를 입력하세요"
+                    value={searchKeyword}
+                    onChange={(event) => setSearchKeyword(event.target.value)}
+                    style={{ marginBottom: 12 }}
+                />
+                <List
+                    bordered
+                    size="small"
+                    dataSource={searchableRoutes}
+                    renderItem={([path, meta]) => (
+                        <List.Item
+                            style={{ cursor: "pointer" }}
+                            onClick={() => openRoute(path)}
+                            actions={[<Button key={path} type="link" onClick={() => openRoute(path)}>이동</Button>]}
+                        >
+                            <List.Item.Meta title={meta.title} description={meta.breadcrumb} />
+                        </List.Item>
+                    )}
+                />
+            </Modal>
         </div>
     );
 }
