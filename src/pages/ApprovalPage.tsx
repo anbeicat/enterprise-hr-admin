@@ -13,7 +13,7 @@ export default function ApprovalPage({ mode }: ApprovalPageProps) {
     const queryClient = useQueryClient();
     const { data: requests = [], isLoading, isError } = useQuery({
         queryKey: ["requests", "all"],
-        queryFn: () => getRequests(),
+        queryFn: () => getRequests(undefined, mode === "mine" ? "mine" : "all"),
     });
     const [selected, setSelected] = useState<RequestRecord | null>(null);
     const [comment, setComment] = useState("");

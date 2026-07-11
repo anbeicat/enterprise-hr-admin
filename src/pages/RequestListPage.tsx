@@ -14,7 +14,7 @@ export default function RequestListPage({ type }: RequestListPageProps) {
     const queryClient = useQueryClient();
     const { data: requests = [], isLoading, isError } = useQuery({
         queryKey: ["requests", type],
-        queryFn: () => getRequests(type),
+        queryFn: () => getRequests(type, "mine"),
     });
     const [keyword, setKeyword] = useState("");
     const [status, setStatus] = useState<string>();
@@ -33,7 +33,7 @@ export default function RequestListPage({ type }: RequestListPageProps) {
         const prefix = { LEAVE: "LV", OVERTIME: "OT", BUSINESS_TRIP: "BT" }[type];
         const record: Omit<RequestRecord, "id"> = {
             requestNo: `${prefix}-2026-${String(nextId).padStart(3, "0")}`, type,
-            title: values.title, requester: "admin", department: "인사팀",
+            title: values.title, requester: "", department: "",
             startDate: values.dateRange[0].format("YYYY-MM-DD"), endDate: values.dateRange[1].format("YYYY-MM-DD"),
             amount: values.amount, reason: values.reason, status: "PENDING", approver: "김민수", createdAt: dayjs().format("YYYY-MM-DD HH:mm"),
         };

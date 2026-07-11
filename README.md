@@ -13,6 +13,8 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 개발/preview/정적 배포 환경에서 동작하는 Mock API
 - 역할별 사이드바 메뉴 노출
 - 역할별 라우트 및 등록·수정·삭제 버튼 접근 제어
+- Mock API 단계의 Bearer Token 및 역할 권한 검증
+- 일반 직원 본인·부서장 소속 부서 기준의 결재 데이터 범위 제어
 - 권한 없는 접근을 안내하는 403 화면
 - Sidebar, Header, Breadcrumb, TagsView, Footer
 - 보호 라우트 및 로그아웃
@@ -107,7 +109,7 @@ VITE_API_BASE_URL=https://api.example.com/api
 
 ## 테스트 계정
 
-모든 계정의 비밀번호는 `123456`이며, 인증번호 입력란에는 임의의 값을 입력할 수 있습니다.
+모든 계정의 비밀번호는 `123456`이며, 화면의 `9-8=?` 인증번호에는 `1`을 입력합니다.
 
 | 아이디 | 역할 |
 |---|---|
@@ -121,6 +123,7 @@ VITE_API_BASE_URL=https://api.example.com/api
 ```bash
 npm run build
 npm run lint
+npm run test
 ```
 
 ## API 연동 방향

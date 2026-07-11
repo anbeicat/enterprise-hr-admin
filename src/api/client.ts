@@ -16,6 +16,14 @@ apiClient.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             localStorage.removeItem("accessToken");
+            localStorage.removeItem("username");
+            localStorage.removeItem("role");
+            if (window.location.pathname !== "/login") {
+                window.location.assign("/login");
+            }
+        }
+        if (error.response?.status === 403 && window.location.pathname !== "/403") {
+            window.location.assign("/403");
         }
         return Promise.reject(error);
     },

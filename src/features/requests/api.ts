@@ -3,9 +3,9 @@ import type { RequestRecord, RequestType } from "./types";
 
 export type RequestPayload = Omit<RequestRecord, "id">;
 
-export async function getRequests(type?: RequestType) {
+export async function getRequests(type?: RequestType, scope?: "all" | "mine") {
     const response = await apiClient.get<RequestRecord[]>("/approval-requests", {
-        params: type ? { type } : undefined,
+        params: { type, scope },
     });
     return response.data;
 }

@@ -11,10 +11,12 @@ import {
     SafetyCertificateOutlined,
     UserOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Checkbox, Form, Input, Typography } from "antd";
+import { Button, Card, Checkbox, Form, Input, message, Typography } from "antd";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../api/auth";
 import loginBg from "../assets/images/login-bg.jpg";
-import { loginSuccess, type UserRole } from "../store/authSlice";
+import { loginSuccess } from "../store/authSlice";
 import { useAppDispatch } from "../store/hooks";
 
 const { Title } = Typography;
@@ -29,26 +31,29 @@ interface LoginFormValues {
 export default function LoginPage() {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+    const [submitting, setSubmitting] = useState(false);
 
-    const handleFinish = (values: LoginFormValues) => {
-        console.log("login values:", values);
+    const handleFinish = async (values: LoginFormValues) => {
+        setSubmitting(true);
+        try {
+            const session = await login(values);
+            localStorage.setItem("accessToken", session.token);
+            localStorage.setItem("username", session.username);
+            localStorage.setItem("role", session.role);
 
-        // 第一阶段先做假登录
-        const roleByUsername: Record<string, UserRole> = {
-            admin: "ADMIN",
-            hr: "HR_MANAGER",
-            manager: "DEPT_MANAGER",
-            employee: "EMPLOYEE",
-        };
-        const role = roleByUsername[values.username] ?? "EMPLOYEE";
-        const token = `mock-token-${values.username}`;
+            if (values.remember) {
+                localStorage.setItem("rememberedUsername", values.username);
+            } else {
+                localStorage.removeItem("rememberedUsername");
+            }
 
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("username", values.username);
-        localStorage.setItem("role", role);
-        dispatch(loginSuccess({ username: values.username, role, token }));
-
-        navigate("/dashboard");
+            dispatch(loginSuccess(session));
+            navigate("/dashboard");
+        } catch {
+            message.error("로그인 정보를 확인해 주세요.");
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -91,9 +96,9 @@ export default function LoginPage() {
                 <Form
                     layout="vertical"
                     initialValues={{
-                        username: "admin",
+                        username: localStorage.getItem("rememberedUsername") ?? "admin",
                         password: "123456",
-                        remember: false,
+                        remember: Boolean(localStorage.getItem("rememberedUsername")),
                     }}
                     onFinish={handleFinish}
                 >
@@ -165,6 +170,7 @@ export default function LoginPage() {
                         htmlType="submit"
                         size="large"
                         block
+                        loading={submitting}
                         style={{
                             height: 40,
                             fontSize: 15,
