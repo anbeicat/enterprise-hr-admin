@@ -6,7 +6,7 @@
  * @description: 职员管理
  * @FilePath: /enterprise-hr-admin/src/pages/EmployeeListPage.tsx
  */
-import { Alert, Card, message } from "antd";
+import { Alert, Card, message, Modal } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import EmployeeFormModal from "../features/employees/components/EmployeeFormModal";
@@ -23,7 +23,7 @@ import type {
     Employee,
     EmployeeSearchParams,
 } from "../features/employees/types";
-import { downloadCsv } from "../utils/csv";
+import { downloadEmployeeWorkbook, parseEmployeeWorkbook } from "../utils/excel";
 
 type EmployeeFormValues = Omit<Employee, "id">;
 
@@ -135,61 +135,40 @@ export default function EmployeeListPage() {
         setEditingEmployee(null);
     };
 
-    const handleExport = () => {
-        downloadCsv(
-            "employees.csv",
-            ["사번", "이름", "부서", "직급", "이메일", "연락처", "권한", "재직상태", "입사일"],
-            filteredEmployees.map((employee) => [
-                employee.employeeNo,
-                employee.name,
-                employee.departmentName,
-                employee.position,
-                employee.email,
-                employee.phone,
-                employee.role,
-                employee.status,
-                employee.joinedAt,
-            ]),
-        );
-        message.success("직원 목록을 CSV 형식으로 내보냈습니다.");
+    const handleExport = async () => {
+        await downloadEmployeeWorkbook(filteredEmployees, "employees.xlsx");
+        message.success("직원 목록을 Excel 파일로 내보냈습니다.");
     };
 
     const handleImport = async (file: File) => {
-        const text = await file.text();
-        const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean).slice(1);
-        const imported = lines.map((line, index): Employee | null => {
-            const values = line.split(",").map((value) => value.replace(/^"|"$/g, "").replaceAll('""', '"'));
-            if (values.length < 9) return null;
-            return {
-                id: Date.now() + index,
-                employeeNo: values[0],
-                name: values[1],
-                departmentName: values[2],
-                position: values[3],
-                email: values[4],
-                phone: values[5],
-                role: values[6] as Employee["role"],
-                status: values[7] as Employee["status"],
-                joinedAt: values[8],
-            };
-        }).filter((employee): employee is Employee => employee !== null);
-        await Promise.all(
-            imported.map((employee) =>
-                createEmployee({
-                    employeeNo: employee.employeeNo,
-                    name: employee.name,
-                    departmentName: employee.departmentName,
-                    position: employee.position,
-                    email: employee.email,
-                    phone: employee.phone,
-                    role: employee.role,
-                    status: employee.status,
-                    joinedAt: employee.joinedAt,
-                }),
-            ),
-        );
-        await queryClient.invalidateQueries({ queryKey: ["employees"] });
-        message.success(`${imported.length}명의 직원 정보를 가져왔습니다.`);
+        try {
+            const result = await parseEmployeeWorkbook(await file.arrayBuffer(), employees);
+            if (result.errors.length > 0) {
+                Modal.error({
+                    title: "Excel 가져오기 검증 실패",
+                    width: 620,
+                    content: <ul style={{ paddingLeft: 20 }}>{result.errors.slice(0, 10).map((error) => <li key={error}>{error}</li>)}</ul>,
+                });
+                return;
+            }
+            if (result.employees.length === 0) {
+                message.warning("가져올 직원 데이터가 없습니다.");
+                return;
+            }
+            await Promise.all(result.employees.map(createEmployee));
+            await queryClient.invalidateQueries({ queryKey: ["employees"] });
+            message.success(`${result.employees.length}명의 직원 정보를 가져왔습니다.`);
+        } catch {
+            Modal.error({
+                title: "Excel 파일을 읽을 수 없습니다.",
+                content: "손상된 파일이거나 지원하지 않는 형식입니다. 제공된 양식을 사용해 주세요.",
+            });
+        }
+    };
+
+    const handleDownloadTemplate = async () => {
+        await downloadEmployeeWorkbook([], "employee-import-template.xlsx");
+        message.success("Excel 가져오기 양식을 다운로드했습니다.");
     };
 
     return (
@@ -215,6 +194,7 @@ export default function EmployeeListPage() {
                     onDeleteSelected={handleDeleteSelected}
                     onImport={handleImport}
                     onExport={handleExport}
+                    onDownloadTemplate={handleDownloadTemplate}
                 />
 
 

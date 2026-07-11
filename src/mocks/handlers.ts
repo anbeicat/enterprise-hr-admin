@@ -102,6 +102,12 @@ export const handlers = [
         await delay(API_DELAY);
         const values = (await request.json()) as Omit<Employee, "id">;
         const employees = mockDatabase.getEmployees();
+        if (employees.some((item) => item.employeeNo.toLowerCase() === values.employeeNo.toLowerCase())) {
+            return HttpResponse.json({ message: "이미 등록된 사번입니다." }, { status: 409 });
+        }
+        if (employees.some((item) => item.email.toLowerCase() === values.email.toLowerCase())) {
+            return HttpResponse.json({ message: "이미 등록된 이메일입니다." }, { status: 409 });
+        }
         const employee: Employee = {
             id: Math.max(0, ...employees.map((item) => item.id)) + 1,
             ...values,

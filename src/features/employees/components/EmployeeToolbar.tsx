@@ -10,6 +10,7 @@ import {
     DeleteOutlined,
     DownloadOutlined,
     EditOutlined,
+    FileExcelOutlined,
     PlusOutlined,
     UploadOutlined,
 } from "@ant-design/icons";
@@ -23,6 +24,7 @@ interface EmployeeToolbarProps {
     onDeleteSelected: () => void;
     onImport: (file: File) => void;
     onExport: () => void;
+    onDownloadTemplate: () => void;
 }
 
 export default function EmployeeToolbar({
@@ -32,6 +34,7 @@ export default function EmployeeToolbar({
     onDeleteSelected,
     onImport,
     onExport,
+    onDownloadTemplate,
 }: EmployeeToolbarProps) {
     return (
         <Space style={{ marginBottom: 12 }}>
@@ -69,7 +72,7 @@ export default function EmployeeToolbar({
 
             <PermissionGuard permission="employee:write">
                 <Upload
-                    accept=".csv"
+                    accept=".xlsx"
                     showUploadList={false}
                     beforeUpload={(file) => {
                         onImport(file);
@@ -80,6 +83,7 @@ export default function EmployeeToolbar({
                 </Upload>
             </PermissionGuard>
 
+            <Button icon={<FileExcelOutlined />} onClick={onDownloadTemplate}>Excel 양식</Button>
             <Button icon={<DownloadOutlined />} onClick={onExport}>Excel 내보내기</Button>
         </Space>
     );
