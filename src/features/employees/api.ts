@@ -21,3 +21,10 @@ export async function updateEmployee(id: number, values: EmployeePayload) {
 export async function deleteEmployee(id: number) {
     await apiClient.delete(`/employees/${id}`);
 }
+
+export async function importEmployees(employees: EmployeePayload[]) {
+    const response = await apiClient.post<{ created: Employee[] }>("/employees/import", {
+        employees,
+    });
+    return response.data;
+}

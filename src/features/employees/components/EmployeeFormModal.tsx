@@ -27,14 +27,16 @@ interface EmployeeFormModalProps {
     open: boolean;
     mode: "create" | "edit";
     initialValues?: Employee | null;
+    submitting?: boolean;
     onCancel: () => void;
-    onSubmit: (values: EmployeeSubmitValues) => void;
+    onSubmit: (values: EmployeeSubmitValues) => Promise<void>;
 }
 
 export default function EmployeeFormModal({
     open,
     mode,
     initialValues,
+    submitting = false,
     onCancel,
     onSubmit,
 }: EmployeeFormModalProps) {
@@ -55,13 +57,15 @@ export default function EmployeeFormModal({
 
     const handleOk = async () => {
         const values = await form.validateFields();
-
-        onSubmit({
-            ...values,
-            joinedAt: values.joinedAt.format("YYYY-MM-DD"),
-        });
-
-        form.resetFields();
+        try {
+            await onSubmit({
+                ...values,
+                joinedAt: values.joinedAt.format("YYYY-MM-DD"),
+            });
+            form.resetFields();
+        } catch {
+            // The parent keeps the modal open and displays the API error.
+        }
     };
 
     return (
@@ -70,6 +74,7 @@ export default function EmployeeFormModal({
             open={open}
             onOk={handleOk}
             onCancel={onCancel}
+            confirmLoading={submitting}
             okText="확인"
             cancelText="취소"
             width={760}

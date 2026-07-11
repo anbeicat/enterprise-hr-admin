@@ -17,8 +17,10 @@ import {
     createEmployee,
     deleteEmployee,
     getEmployees,
+    importEmployees,
     updateEmployee,
 } from "../features/employees/api";
+import axios from "axios";
 import type {
     Employee,
     EmployeeSearchParams,
@@ -121,18 +123,26 @@ export default function EmployeeListPage() {
     };
 
     const handleSubmit = async (values: EmployeeFormValues) => {
-        if (modalMode === "create") {
-            await createMutation.mutateAsync(values);
-            message.success("직원이 등록되었습니다.");
-        }
+        try {
+            if (modalMode === "create") {
+                await createMutation.mutateAsync(values);
+                message.success("직원이 등록되었습니다.");
+            }
 
-        if (modalMode === "edit" && editingEmployee) {
-            await updateMutation.mutateAsync({ id: editingEmployee.id, values });
-            message.success("직원 정보가 수정되었습니다.");
-        }
+            if (modalMode === "edit" && editingEmployee) {
+                await updateMutation.mutateAsync({ id: editingEmployee.id, values });
+                message.success("직원 정보가 수정되었습니다.");
+            }
 
-        setModalOpen(false);
-        setEditingEmployee(null);
+            setModalOpen(false);
+            setEditingEmployee(null);
+        } catch (error) {
+            const apiMessage = axios.isAxiosError<{ message?: string }>(error)
+                ? error.response?.data.message
+                : undefined;
+            message.error(apiMessage ?? "직원 정보를 저장하지 못했습니다.");
+            throw error;
+        }
     };
 
     const handleExport = async () => {
@@ -141,27 +151,44 @@ export default function EmployeeListPage() {
     };
 
     const handleImport = async (file: File) => {
+        let result: Awaited<ReturnType<typeof parseEmployeeWorkbook>>;
         try {
-            const result = await parseEmployeeWorkbook(await file.arrayBuffer(), employees);
-            if (result.errors.length > 0) {
-                Modal.error({
-                    title: "Excel 가져오기 검증 실패",
-                    width: 620,
-                    content: <ul style={{ paddingLeft: 20 }}>{result.errors.slice(0, 10).map((error) => <li key={error}>{error}</li>)}</ul>,
-                });
-                return;
-            }
-            if (result.employees.length === 0) {
-                message.warning("가져올 직원 데이터가 없습니다.");
-                return;
-            }
-            await Promise.all(result.employees.map(createEmployee));
-            await queryClient.invalidateQueries({ queryKey: ["employees"] });
-            message.success(`${result.employees.length}명의 직원 정보를 가져왔습니다.`);
+            result = await parseEmployeeWorkbook(await file.arrayBuffer(), employees);
         } catch {
             Modal.error({
                 title: "Excel 파일을 읽을 수 없습니다.",
                 content: "손상된 파일이거나 지원하지 않는 형식입니다. 제공된 양식을 사용해 주세요.",
+            });
+            return;
+        }
+
+        if (result.errors.length > 0) {
+            Modal.error({
+                title: "Excel 가져오기 검증 실패",
+                width: 620,
+                content: <ul style={{ paddingLeft: 20 }}>{result.errors.slice(0, 10).map((error) => <li key={error}>{error}</li>)}</ul>,
+            });
+            return;
+        }
+        if (result.employees.length === 0) {
+            message.warning("가져올 직원 데이터가 없습니다.");
+            return;
+        }
+
+        try {
+            const response = await importEmployees(result.employees);
+            await queryClient.invalidateQueries({ queryKey: ["employees"] });
+            message.success(`${response.created.length}명의 직원 정보를 가져왔습니다.`);
+        } catch (error) {
+            const errors = axios.isAxiosError<{ errors?: string[] }>(error)
+                ? error.response?.data.errors
+                : undefined;
+            Modal.error({
+                title: "Excel 일괄 등록 실패",
+                width: 620,
+                content: errors?.length
+                    ? <ul style={{ paddingLeft: 20 }}>{errors.slice(0, 10).map((item) => <li key={item}>{item}</li>)}</ul>
+                    : "직원 데이터를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
             });
         }
     };
@@ -213,6 +240,7 @@ export default function EmployeeListPage() {
                 open={modalOpen}
                 mode={modalMode}
                 initialValues={editingEmployee}
+                submitting={createMutation.isPending || updateMutation.isPending}
                 onCancel={() => {
                     setModalOpen(false);
                     setEditingEmployee(null);

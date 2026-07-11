@@ -19,6 +19,7 @@ import { getAccountFromRequest, requireAuthentication, requirePermission } from 
 import { DEMO_ACCOUNTS } from "../auth/accounts";
 import type { LoginPayload } from "../api/auth";
 import { recordLog } from "./audit";
+import { findEmployeeConflict, validateEmployeeBatch } from "../features/employees/validation";
 
 const API_DELAY = 250;
 
@@ -105,12 +106,8 @@ export const handlers = [
         await delay(API_DELAY);
         const values = (await request.json()) as Omit<Employee, "id">;
         const employees = mockDatabase.getEmployees();
-        if (employees.some((item) => item.employeeNo.toLowerCase() === values.employeeNo.toLowerCase())) {
-            return HttpResponse.json({ message: "이미 등록된 사번입니다." }, { status: 409 });
-        }
-        if (employees.some((item) => item.email.toLowerCase() === values.email.toLowerCase())) {
-            return HttpResponse.json({ message: "이미 등록된 이메일입니다." }, { status: 409 });
-        }
+        const conflict = findEmployeeConflict(values, employees);
+        if (conflict) return HttpResponse.json({ message: conflict }, { status: 409 });
         const employee: Employee = {
             id: Math.max(0, ...employees.map((item) => item.id)) + 1,
             ...values,
@@ -118,6 +115,29 @@ export const handlers = [
         mockDatabase.saveEmployees([employee, ...employees]);
         recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `직원 ${employee.employeeNo} 등록` });
         return HttpResponse.json(employee, { status: 201 });
+    }),
+
+    http.post("/api/employees/import", async ({ request }) => {
+        const denied = requirePermission(request, "employee:write");
+        if (denied) return denied;
+        await delay(API_DELAY);
+        const { employees: incoming } = (await request.json()) as { employees: Omit<Employee, "id">[] };
+        if (!Array.isArray(incoming) || incoming.length === 0) {
+            return HttpResponse.json({ message: "가져올 직원 데이터가 없습니다." }, { status: 400 });
+        }
+
+        const employees = mockDatabase.getEmployees();
+        const errors = validateEmployeeBatch(incoming, employees);
+        if (errors.length > 0) {
+            recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `Excel 직원 ${incoming.length}건 가져오기 실패`, result: "FAIL" });
+            return HttpResponse.json({ message: "직원 데이터 중복 검증에 실패했습니다.", errors }, { status: 409 });
+        }
+
+        const firstId = Math.max(0, ...employees.map((item) => item.id)) + 1;
+        const created = incoming.map((values, index): Employee => ({ id: firstId + index, ...values }));
+        mockDatabase.saveEmployees([...created, ...employees]);
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `Excel 직원 ${created.length}건 일괄 등록` });
+        return HttpResponse.json({ created }, { status: 201 });
     }),
 
     http.put("/api/employees/:id", async ({ params, request }) => {
@@ -129,6 +149,8 @@ export const handlers = [
         const employees = mockDatabase.getEmployees();
         const employee = employees.find((item) => item.id === id);
         if (!employee) return HttpResponse.json({ message: "직원을 찾을 수 없습니다." }, { status: 404 });
+        const conflict = findEmployeeConflict(values, employees, id);
+        if (conflict) return HttpResponse.json({ message: conflict }, { status: 409 });
         const updated = { ...employee, ...values };
         mockDatabase.saveEmployees(employees.map((item) => (item.id === id ? updated : item)));
         recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `직원 ${updated.employeeNo} 정보 수정` });
