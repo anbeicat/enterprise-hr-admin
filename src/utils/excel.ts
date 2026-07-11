@@ -14,6 +14,39 @@ const STATUS_BY_TEXT = Object.fromEntries(
     Object.entries(EMPLOYEE_STATUS_TEXT).flatMap(([value, label]) => [[value, value], [label, value]]),
 ) as Record<string, Employee["status"]>;
 
+function formatValidDate(year: number, month: number, day: number) {
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (
+        date.getUTCFullYear() !== year ||
+        date.getUTCMonth() !== month - 1 ||
+        date.getUTCDate() !== day
+    ) return null;
+
+    return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+export function normalizeExcelDate(value: unknown, displayText = ""): string | null {
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return formatValidDate(value.getFullYear(), value.getMonth() + 1, value.getDate());
+    }
+
+    if (typeof value === "number" && Number.isFinite(value)) {
+        const excelEpoch = Date.UTC(1899, 11, 30);
+        const date = new Date(excelEpoch + Math.floor(value) * 86_400_000);
+        return formatValidDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
+    }
+
+    if (value && typeof value === "object" && "result" in value) {
+        const normalizedResult = normalizeExcelDate((value as { result?: unknown }).result, displayText);
+        if (normalizedResult) return normalizedResult;
+    }
+
+    const text = (typeof value === "string" ? value : displayText).trim();
+    const match = text.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})$/);
+    if (!match) return null;
+    return formatValidDate(Number(match[1]), Number(match[2]), Number(match[3]));
+}
+
 async function createWorkbook(employees: EmployeeImportRow[]) {
     const { Workbook } = await import("exceljs");
     const workbook = new Workbook();
@@ -36,7 +69,12 @@ async function createWorkbook(employees: EmployeeImportRow[]) {
         ...employee,
         role: EMPLOYEE_ROLE_TEXT[employee.role],
         status: EMPLOYEE_STATUS_TEXT[employee.status],
+        joinedAt: (() => {
+            const [year, month, day] = employee.joinedAt.split("-").map(Number);
+            return new Date(year, month - 1, day);
+        })(),
     })));
+    worksheet.getColumn("joinedAt").numFmt = "yyyy-mm-dd";
     worksheet.getRow(1).eachCell((cell) => {
         cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1677FF" } };
@@ -51,7 +89,7 @@ async function createWorkbook(employees: EmployeeImportRow[]) {
     ];
     Object.entries(EMPLOYEE_ROLE_TEXT).forEach(([code, label]) => guide.addRow({ type: "권한", value: `${label} (${code})` }));
     Object.entries(EMPLOYEE_STATUS_TEXT).forEach(([code, label]) => guide.addRow({ type: "재직상태", value: `${label} (${code})` }));
-    guide.addRow({ type: "입사일", value: "YYYY-MM-DD" });
+    guide.addRow({ type: "입사일", value: "Excel 날짜 또는 YYYY-MM-DD / YYYY/MM/DD" });
 
     return workbook;
 }
@@ -102,20 +140,23 @@ export async function parseEmployeeWorkbook(
     worksheet.eachRow((row, rowNumber) => {
         const values = HEADERS.map((_, index) => row.getCell(index + 1).text.trim());
         if (rowNumber === 1 || values.every((value) => value === "")) return;
-        const [employeeNo, name, departmentName, position, email, phone, roleText, statusText, joinedAt] = values;
+        const [employeeNo, name, departmentName, position, email, phone, roleText, statusText] = values;
+        const joinedAtCell = row.getCell(9);
+        const joinedAt = normalizeExcelDate(joinedAtCell.value, joinedAtCell.text);
+        const hasJoinedAt = joinedAtCell.value !== null && joinedAtCell.value !== undefined && joinedAtCell.text.trim() !== "";
         const role = ROLE_BY_TEXT[roleText];
         const status = STATUS_BY_TEXT[statusText];
         const rowErrors: string[] = [];
 
-        if (!employeeNo || !name || !departmentName || !position || !email || !phone || !roleText || !statusText || !joinedAt) rowErrors.push("필수 값 누락");
+        if (!employeeNo || !name || !departmentName || !position || !email || !phone || !roleText || !statusText || !hasJoinedAt) rowErrors.push("필수 값 누락");
         if (employeeNo && employeeNos.has(employeeNo.toLowerCase())) rowErrors.push("중복 사번");
         if (email && emails.has(email.toLowerCase())) rowErrors.push("중복 이메일");
         if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) rowErrors.push("이메일 형식 오류");
         if (!role) rowErrors.push("권한 값 오류");
         if (!status) rowErrors.push("재직상태 값 오류");
-        if (joinedAt && !/^\d{4}-\d{2}-\d{2}$/.test(joinedAt)) rowErrors.push("입사일 형식 오류");
+        if (hasJoinedAt && !joinedAt) rowErrors.push("입사일 형식 오류");
 
-        if (rowErrors.length > 0 || !role || !status) {
+        if (rowErrors.length > 0 || !role || !status || !joinedAt) {
             errors.push(`${rowNumber}행: ${rowErrors.join(", ")}`);
             return;
         }

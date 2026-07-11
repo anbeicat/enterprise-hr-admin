@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildEmployeeWorkbook, parseEmployeeWorkbook } from "./excel";
+import { buildEmployeeWorkbook, normalizeExcelDate, parseEmployeeWorkbook } from "./excel";
 
 const employee = {
     employeeNo: "EMP900",
@@ -14,6 +14,14 @@ const employee = {
 };
 
 describe("employee Excel workbook", () => {
+    it("normalizes native Excel dates and common Korean spreadsheet styles", () => {
+        expect(normalizeExcelDate(new Date(2023, 10, 11))).toBe("2023-11-11");
+        expect(normalizeExcelDate("2023/11/11")).toBe("2023-11-11");
+        expect(normalizeExcelDate("2023.11.11")).toBe("2023-11-11");
+        expect(normalizeExcelDate("2023-2-3")).toBe("2023-02-03");
+        expect(normalizeExcelDate("2023-02-30")).toBeNull();
+    });
+
     it("round-trips employee rows through xlsx", async () => {
         const bytes = await buildEmployeeWorkbook([employee]);
         const result = await parseEmployeeWorkbook(bytes.buffer as ArrayBuffer, []);
