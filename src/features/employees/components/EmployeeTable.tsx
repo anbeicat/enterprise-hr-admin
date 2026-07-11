@@ -22,6 +22,10 @@ interface EmployeeTableProps {
     onEdit: (employee: Employee) => void;
     onDelete: (id: number) => void;
     loading?: boolean;
+    page: number;
+    pageSize: number;
+    total: number;
+    onPageChange: (page: number, pageSize: number) => void;
 }
 
 export default function EmployeeTable({
@@ -31,6 +35,10 @@ export default function EmployeeTable({
     onEdit,
     onDelete,
     loading = false,
+    page,
+    pageSize,
+    total,
+    onPageChange,
 }: EmployeeTableProps) {
     return (
         <Table
@@ -44,9 +52,13 @@ export default function EmployeeTable({
                 onChange: onSelectedRowKeysChange,
             }}
             pagination={{
-                pageSize: 10,
-                showTotal: (total) => `총 ${total}건`,
+                current: page,
+                pageSize,
+                total,
+                showSizeChanger: true,
+                showTotal: (count) => `총 ${count}건`,
             }}
+            onChange={(pagination) => onPageChange(pagination.current ?? 1, pagination.pageSize ?? 10)}
             columns={[
                 {
                     title: "사번",

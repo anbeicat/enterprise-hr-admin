@@ -8,7 +8,7 @@
  */
 import { Alert, Card, message, Modal } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import EmployeeFormModal from "../features/employees/components/EmployeeFormModal";
 import EmployeeSearchForm from "../features/employees/components/EmployeeSearchForm";
 import EmployeeTable from "../features/employees/components/EmployeeTable";
@@ -16,6 +16,7 @@ import EmployeeToolbar from "../features/employees/components/EmployeeToolbar";
 import {
     createEmployee,
     deleteEmployee,
+    deleteEmployees,
     getEmployees,
     importEmployees,
     updateEmployee,
@@ -31,13 +32,19 @@ type EmployeeFormValues = Omit<Employee, "id">;
 
 export default function EmployeeListPage() {
     const queryClient = useQueryClient();
+    const [searchParams, setSearchParams] = useState<EmployeeSearchParams>({});
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
     const {
-        data: employees = [],
+        data: employeePage,
         isLoading,
         isError,
-    } = useQuery({ queryKey: ["employees"], queryFn: getEmployees });
-    const [searchParams, setSearchParams] = useState<EmployeeSearchParams>({});
+    } = useQuery({
+        queryKey: ["employees", searchParams, page, pageSize],
+        queryFn: () => getEmployees({ ...searchParams, page, size: pageSize }),
+    });
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+    const employees = employeePage?.content ?? [];
 
     const [modalOpen, setModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<"create" | "edit">("create");
@@ -56,33 +63,6 @@ export default function EmployeeListPage() {
         mutationFn: deleteEmployee,
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["employees"] }),
     });
-
-    const filteredEmployees = useMemo(() => {
-        return employees.filter((employee) => {
-            const matchesEmployeeNo =
-                !searchParams.employeeNo ||
-                employee.employeeNo
-                    .toLowerCase()
-                    .includes(searchParams.employeeNo.toLowerCase());
-
-            const matchesName =
-                !searchParams.name || employee.name.includes(searchParams.name);
-
-            const matchesDepartment =
-                !searchParams.departmentName ||
-                employee.departmentName === searchParams.departmentName;
-
-            const matchesStatus =
-                !searchParams.status || employee.status === searchParams.status;
-
-            return (
-                matchesEmployeeNo &&
-                matchesName &&
-                matchesDepartment &&
-                matchesStatus
-            );
-        });
-    }, [employees, searchParams]);
 
     const handleCreate = () => {
         setModalMode("create");
@@ -116,7 +96,7 @@ export default function EmployeeListPage() {
     };
 
     const handleDeleteSelected = async () => {
-        await Promise.all(selectedRowKeys.map((id) => deleteEmployee(Number(id))));
+        await deleteEmployees(selectedRowKeys.map(Number));
         await queryClient.invalidateQueries({ queryKey: ["employees"] });
         setSelectedRowKeys([]);
         message.success("선택한 직원이 삭제되었습니다.");
@@ -146,7 +126,8 @@ export default function EmployeeListPage() {
     };
 
     const handleExport = async () => {
-        await downloadEmployeeWorkbook(filteredEmployees, "employees.xlsx");
+        const exportPage = await getEmployees({ ...searchParams, page: 1, size: 10_000 });
+        await downloadEmployeeWorkbook(exportPage.content, "employees.xlsx");
         message.success("직원 목록을 Excel 파일로 내보냈습니다.");
     };
 
@@ -209,8 +190,16 @@ export default function EmployeeListPage() {
                 />
             )}
             <EmployeeSearchForm
-                onSearch={setSearchParams}
-                onReset={() => setSearchParams({})}
+                onSearch={(values) => {
+                    setSearchParams(values);
+                    setPage(1);
+                    setSelectedRowKeys([]);
+                }}
+                onReset={() => {
+                    setSearchParams({});
+                    setPage(1);
+                    setSelectedRowKeys([]);
+                }}
             />
 
             <Card>
@@ -227,12 +216,20 @@ export default function EmployeeListPage() {
 
 
                 <EmployeeTable
-                    employees={filteredEmployees}
+                    employees={employees}
                     selectedRowKeys={selectedRowKeys}
                     onSelectedRowKeysChange={setSelectedRowKeys}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     loading={isLoading}
+                    page={employeePage?.page ?? page}
+                    pageSize={employeePage?.size ?? pageSize}
+                    total={employeePage?.total ?? 0}
+                    onPageChange={(nextPage, nextPageSize) => {
+                        setPage(nextPageSize !== pageSize ? 1 : nextPage);
+                        setPageSize(nextPageSize);
+                        setSelectedRowKeys([]);
+                    }}
                 />
             </Card>
 

@@ -29,3 +29,15 @@ export interface EmployeeSearchParams {
     departmentName?: string;
     status?: EmployeeStatus;
 }
+
+export interface EmployeeListParams extends EmployeeSearchParams {
+    page: number;
+    size: number;
+}
+
+export interface EmployeePage {
+    content: Employee[];
+    total: number;
+    page: number;
+    size: number;
+}

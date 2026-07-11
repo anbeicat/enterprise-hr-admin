@@ -20,6 +20,8 @@ import { DEMO_ACCOUNTS } from "../auth/accounts";
 import type { LoginPayload } from "../api/auth";
 import { recordLog } from "./audit";
 import { findEmployeeConflict, validateEmployeeBatch } from "../features/employees/validation";
+import { queryEmployeePage } from "../features/employees/query";
+import type { EmployeeListParams } from "../features/employees/types";
 
 const API_DELAY = 250;
 
@@ -97,7 +99,16 @@ export const handlers = [
         const denied = requirePermission(request, "employee:read");
         if (denied) return denied;
         await delay(API_DELAY);
-        return HttpResponse.json(mockDatabase.getEmployees());
+        const searchParams = new URL(request.url).searchParams;
+        const params: EmployeeListParams = {
+            employeeNo: searchParams.get("employeeNo") || undefined,
+            name: searchParams.get("name") || undefined,
+            departmentName: searchParams.get("departmentName") || undefined,
+            status: (searchParams.get("status") as Employee["status"] | null) || undefined,
+            page: Number(searchParams.get("page")) || 1,
+            size: Number(searchParams.get("size")) || 10,
+        };
+        return HttpResponse.json(queryEmployeePage(mockDatabase.getEmployees(), params));
     }),
 
     http.post("/api/employees", async ({ request }) => {
@@ -166,6 +177,27 @@ export const handlers = [
         const employee = employees.find((item) => item.id === id);
         mockDatabase.saveEmployees(employees.filter((item) => item.id !== id));
         recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `직원 ${employee?.employeeNo ?? id} 삭제` });
+        return new HttpResponse(null, { status: 204 });
+    }),
+
+    http.post("/api/employees/bulk-delete", async ({ request }) => {
+        const denied = requirePermission(request, "employee:write");
+        if (denied) return denied;
+        await delay(API_DELAY);
+        const { ids } = (await request.json()) as { ids: number[] };
+        if (!Array.isArray(ids) || ids.length === 0 || ids.some((id) => !Number.isInteger(id))) {
+            return HttpResponse.json({ message: "삭제할 직원 ID가 올바르지 않습니다." }, { status: 400 });
+        }
+
+        const employees = mockDatabase.getEmployees();
+        const idSet = new Set(ids);
+        const targets = employees.filter((item) => idSet.has(item.id));
+        if (targets.length !== idSet.size) {
+            return HttpResponse.json({ message: "일부 직원을 찾을 수 없습니다." }, { status: 404 });
+        }
+
+        mockDatabase.saveEmployees(employees.filter((item) => !idSet.has(item.id)));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "직원 관리", action: `직원 ${targets.length}명 일괄 삭제` });
         return new HttpResponse(null, { status: 204 });
     }),
 
