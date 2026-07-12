@@ -26,3 +26,10 @@ export async function processRequest(
     );
     return response.data;
 }
+
+export async function cancelRequest(id: number) {
+    const response = await apiClient.put<RequestRecord>(
+        `/approval-requests/${id}/cancel`,
+    );
+    return response.data;
+}

@@ -1,5 +1,14 @@
 export type RequestType = "LEAVE" | "OVERTIME" | "BUSINESS_TRIP";
 export type ApprovalStatus = "DRAFT" | "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type ApprovalAction = "SUBMITTED" | "APPROVED" | "REJECTED" | "CANCELLED";
+
+export interface ApprovalHistoryEntry {
+    id: number;
+    action: ApprovalAction;
+    actor: string;
+    comment?: string;
+    processedAt: string;
+}
 
 export interface RequestRecord {
     id: number;
@@ -15,6 +24,7 @@ export interface RequestRecord {
     status: ApprovalStatus;
     approver: string;
     createdAt: string;
+    approvalHistory?: ApprovalHistoryEntry[];
 }
 
 export const REQUEST_TYPE_TEXT: Record<RequestType, string> = {

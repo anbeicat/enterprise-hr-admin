@@ -1,6 +1,6 @@
 import { delay, http, HttpResponse } from "msw";
 import type { Employee } from "../features/employees/types";
-import type { ApprovalStatus, RequestRecord, RequestType } from "../features/requests/types";
+import type { RequestRecord, RequestType } from "../features/requests/types";
 import { mockDatabase } from "./database";
 import type { DepartmentFormValues } from "../features/departments/types";
 import {
@@ -22,6 +22,7 @@ import { recordLog } from "./audit";
 import { findEmployeeConflict, validateEmployeeBatch } from "../features/employees/validation";
 import { queryEmployeePage } from "../features/employees/query";
 import type { EmployeeListParams } from "../features/employees/types";
+import { createSubmissionHistory, transitionRequest } from "../features/requests/workflow";
 
 const API_DELAY = 250;
 
@@ -259,6 +260,7 @@ export const handlers = [
             ...values,
             requester: account.displayName,
             department: account.department,
+            approvalHistory: createSubmissionHistory(account.displayName, values.createdAt),
         };
         mockDatabase.saveRequests([record, ...requests]);
         recordLog({ request, user: account.username, module: "신청 관리", action: `${record.requestNo} 신청 제출` });
@@ -266,26 +268,48 @@ export const handlers = [
     }),
 
     http.put("/api/approval-requests/:id/:action", async ({ params, request }) => {
-        const denied = requirePermission(request, "approval:process");
+        const action = String(params.action);
+        const isCancel = action === "cancel";
+        if (!isCancel && !["approve", "reject"].includes(action)) {
+            return HttpResponse.json({ message: "지원하지 않는 결재 작업입니다." }, { status: 400 });
+        }
+        const denied = requirePermission(request, isCancel ? "request:create" : "approval:process");
         if (denied) return denied;
         await delay(API_DELAY);
         const id = Number(params.id);
-        const action = String(params.action);
-        const body = (await request.json()) as { comment?: string };
-        const status: ApprovalStatus = action === "approve" ? "APPROVED" : "REJECTED";
+        const body = request.headers.get("content-length") === "0"
+            ? {}
+            : await request.json().catch(() => ({})) as { comment?: string };
         const requests = mockDatabase.getRequests();
         const record = requests.find((item) => item.id === id);
         if (!record) return HttpResponse.json({ message: "신청을 찾을 수 없습니다." }, { status: 404 });
         const account = getAccountFromRequest(request)!;
-        if (account.role === "DEPT_MANAGER" && record.department !== account.department) {
+        if (isCancel && record.requester !== account.displayName) {
+            return HttpResponse.json({ message: "본인이 제출한 신청만 철회할 수 있습니다." }, { status: 403 });
+        }
+        if (!isCancel && account.role === "DEPT_MANAGER" && record.department !== account.department) {
             return HttpResponse.json(
                 { message: "다른 부서의 신청은 처리할 수 없습니다." },
                 { status: 403 },
             );
         }
-        const updated = { ...record, status, approvalComment: body.comment };
+        let updated: RequestRecord;
+        try {
+            updated = transitionRequest(
+                record,
+                isCancel ? "CANCELLED" : action === "approve" ? "APPROVED" : "REJECTED",
+                account.displayName,
+                isCancel ? "신청자 철회" : body.comment,
+                new Date().toLocaleString("sv-SE", { hour12: false }).replace("T", " "),
+            );
+        } catch (error) {
+            return HttpResponse.json(
+                { message: error instanceof Error ? error.message : "결재 상태를 변경할 수 없습니다." },
+                { status: 409 },
+            );
+        }
         mockDatabase.saveRequests(requests.map((item) => (item.id === id ? updated : item)));
-        recordLog({ request, user: account.username, module: "전자결재", action: `${record.requestNo} ${status === "APPROVED" ? "승인" : "반려"}` });
+        recordLog({ request, user: account.username, module: "전자결재", action: `${record.requestNo} ${isCancel ? "철회" : action === "approve" ? "승인" : "반려"}` });
         return HttpResponse.json(updated);
     }),
 
