@@ -5,34 +5,36 @@ import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import PageTitle from "../components/PageTitle";
 import { createRequest, getRequests } from "../features/requests/api";
-import { APPROVAL_STATUS_COLOR, APPROVAL_STATUS_TEXT, REQUEST_TYPE_TEXT, type RequestRecord, type RequestType } from "../features/requests/types";
+import { APPROVAL_STATUS_COLOR, APPROVAL_STATUS_TEXT, REQUEST_TYPE_TEXT, type ApprovalStatus, type RequestListParams, type RequestRecord, type RequestType } from "../features/requests/types";
 
 interface RequestListPageProps { type: RequestType; }
 interface RequestFormValues { title: string; dateRange: [dayjs.Dayjs, dayjs.Dayjs]; amount: string; reason: string; }
+interface RequestSearchValues { keyword?: string; status?: ApprovalStatus; }
 
 export default function RequestListPage({ type }: RequestListPageProps) {
     const queryClient = useQueryClient();
-    const { data: requests = [], isLoading, isError } = useQuery({
-        queryKey: ["requests", type],
-        queryFn: () => getRequests(type, "mine"),
-    });
     const [keyword, setKeyword] = useState("");
-    const [status, setStatus] = useState<string>();
+    const [status, setStatus] = useState<ApprovalStatus>();
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const params = useMemo<RequestListParams>(() => ({ type, scope: "mine", keyword: keyword || undefined, status, page, size: pageSize }), [keyword, page, pageSize, status, type]);
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ["requests", params],
+        queryFn: () => getRequests(params),
+    });
     const [open, setOpen] = useState(false);
     const [form] = Form.useForm<RequestFormValues>();
+    const [searchForm] = Form.useForm<RequestSearchValues>();
     const createMutation = useMutation({
         mutationFn: createRequest,
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ["requests"] }),
     });
     const title = `${REQUEST_TYPE_TEXT[type]} 신청`;
-    const filtered = useMemo(() => requests.filter((item) => (!keyword || item.title.includes(keyword)) && (!status || item.status === status)), [keyword, requests, status]);
-
     const submit = async () => {
         const values = await form.validateFields();
-        const nextId = Math.max(0, ...requests.map((item) => item.id)) + 1;
         const prefix = { LEAVE: "LV", OVERTIME: "OT", BUSINESS_TRIP: "BT" }[type];
         const record: Omit<RequestRecord, "id"> = {
-            requestNo: `${prefix}-2026-${String(nextId).padStart(3, "0")}`, type,
+            requestNo: `${prefix}-${dayjs().format("YYYYMMDDHHmmss")}`, type,
             title: values.title, requester: "", department: "",
             startDate: values.dateRange[0].format("YYYY-MM-DD"), endDate: values.dateRange[1].format("YYYY-MM-DD"),
             amount: values.amount, reason: values.reason, status: "PENDING", approver: "김민수", createdAt: dayjs().format("YYYY-MM-DD HH:mm"),
@@ -46,15 +48,15 @@ export default function RequestListPage({ type }: RequestListPageProps) {
             <PageTitle title={title} description={`${REQUEST_TYPE_TEXT[type]} 신청 내역을 조회하고 새 신청을 제출합니다.`} />
             {isError && <Alert type="error" showIcon message="신청 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
-                <Form layout="inline" onFinish={(values) => { setKeyword(values.keyword ?? ""); setStatus(values.status); }}>
+                <Form form={searchForm} layout="inline" onFinish={(values) => { setKeyword(values.keyword?.trim() ?? ""); setStatus(values.status); setPage(1); }}>
                     <Form.Item label="제목" name="keyword"><Input allowClear placeholder="제목 검색" /></Form.Item>
                     <Form.Item label="상태" name="status"><Select allowClear style={{ width: 160 }} options={Object.entries(APPROVAL_STATUS_TEXT).map(([value, label]) => ({ value, label }))} /></Form.Item>
-                    <Form.Item><Space><Button type="primary" htmlType="submit" icon={<SearchOutlined />}>검색</Button><Button icon={<ReloadOutlined />} onClick={() => { setKeyword(""); setStatus(undefined); }}>초기화</Button></Space></Form.Item>
+                    <Form.Item><Space><Button type="primary" htmlType="submit" icon={<SearchOutlined />}>검색</Button><Button icon={<ReloadOutlined />} onClick={() => { searchForm.resetFields(); setKeyword(""); setStatus(undefined); setPage(1); }}>초기화</Button></Space></Form.Item>
                 </Form>
             </Card>
             <Card styles={{ body: { padding: 12 } }}>
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => setOpen(true)} style={{ marginBottom: 12 }}>{title}</Button>
-                <Table<RequestRecord> rowKey="id" loading={isLoading} dataSource={filtered} pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }} columns={[
+                <Table<RequestRecord> rowKey="id" loading={isLoading} dataSource={data?.content ?? []} pagination={{ current: page, pageSize, total: data?.total ?? 0, showSizeChanger: true, showTotal: (total) => `총 ${total}건`, onChange: (nextPage, nextSize) => { setPage(nextSize !== pageSize ? 1 : nextPage); setPageSize(nextSize); } }} columns={[
                     { title: "신청번호", dataIndex: "requestNo" }, { title: "제목", dataIndex: "title" }, { title: "기간", render: (_, item) => `${item.startDate} ~ ${item.endDate}` },
                     { title: type === "OVERTIME" ? "시간" : type === "BUSINESS_TRIP" ? "예상 비용" : "사용 일수", dataIndex: "amount" },
                     { title: "결재자", dataIndex: "approver" }, { title: "상태", render: (_, item) => <Tag color={APPROVAL_STATUS_COLOR[item.status]}>{APPROVAL_STATUS_TEXT[item.status]}</Tag> }, { title: "신청일시", dataIndex: "createdAt" },

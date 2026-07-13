@@ -9,3 +9,11 @@ export interface Notice {
 }
 
 export type NoticeFormValues = Pick<Notice, "title" | "content" | "pinned">;
+
+export interface NoticeListParams {
+    keyword?: string;
+    author?: string;
+    pinned?: boolean;
+    page: number;
+    size: number;
+}

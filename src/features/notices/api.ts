@@ -1,8 +1,9 @@
 import { apiClient } from "../../api/client";
-import type { Notice, NoticeFormValues } from "./types";
+import type { PageResponse } from "../../types/page";
+import type { Notice, NoticeFormValues, NoticeListParams } from "./types";
 
-export async function getNotices() {
-    const response = await apiClient.get<Notice[]>("/notices");
+export async function getNotices(params: NoticeListParams) {
+    const response = await apiClient.get<PageResponse<Notice>>("/notices", { params });
     return response.data;
 }
 

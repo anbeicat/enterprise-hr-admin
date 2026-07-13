@@ -1,7 +1,8 @@
 import { apiClient } from "../../api/client";
-import type { LogRecord, LogType } from "./types";
+import type { PageResponse } from "../../types/page";
+import type { LogListParams, LogRecord } from "./types";
 
-export async function getLogs(type: LogType) {
-    const response = await apiClient.get<LogRecord[]>("/logs", { params: { type } });
+export async function getLogs(params: LogListParams) {
+    const response = await apiClient.get<PageResponse<LogRecord>>("/logs", { params });
     return response.data;
 }

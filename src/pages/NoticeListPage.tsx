@@ -1,21 +1,26 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Card, Checkbox, Form, Input, message, Modal, Popconfirm, Space, Table, Tag } from "antd";
-import { useState } from "react";
+import { Alert, Button, Card, Checkbox, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
+import { useMemo, useState } from "react";
 import PageTitle from "../components/PageTitle";
 import { createNotice, deleteNotice, getNotices, updateNotice } from "../features/notices/api";
-import type { Notice, NoticeFormValues } from "../features/notices/types";
+import type { Notice, NoticeFormValues, NoticeListParams } from "../features/notices/types";
 import PermissionGuard from "../components/PermissionGuard";
 
 export default function NoticeListPage() {
     const queryClient = useQueryClient();
-    const { data: notices = [], isLoading, isError } = useQuery({
-        queryKey: ["notices"],
-        queryFn: getNotices,
+    const [filters, setFilters] = useState<Pick<NoticeListParams, "keyword" | "author" | "pinned">>({});
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const params = useMemo<NoticeListParams>(() => ({ ...filters, page, size: pageSize }), [filters, page, pageSize]);
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ["notices", params],
+        queryFn: () => getNotices(params),
     });
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState<Notice | null>(null);
     const [form] = Form.useForm<NoticeFormValues>();
+    const [searchForm] = Form.useForm<Pick<NoticeListParams, "keyword" | "author" | "pinned">>();
     const invalidateNotices = () => queryClient.invalidateQueries({ queryKey: ["notices"] });
     const createMutation = useMutation({ mutationFn: createNotice, onSuccess: invalidateNotices });
     const updateMutation = useMutation({
@@ -42,6 +47,14 @@ export default function NoticeListPage() {
         <div>
             <PageTitle title="공지사항" description="사내 공지사항을 등록하고 관리합니다." />
             {isError && <Alert type="error" showIcon message="공지사항을 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
+                <Form form={searchForm} layout="inline" onFinish={(values) => { setFilters(values); setPage(1); }}>
+                    <Form.Item label="검색어" name="keyword"><Input allowClear placeholder="제목 또는 내용" /></Form.Item>
+                    <Form.Item label="작성자" name="author"><Input allowClear placeholder="작성자" /></Form.Item>
+                    <Form.Item label="고정 여부" name="pinned"><Select allowClear style={{ width: 130 }} options={[{ label: "고정", value: true }, { label: "일반", value: false }]} /></Form.Item>
+                    <Form.Item><Space><Button type="primary" htmlType="submit" icon={<SearchOutlined />}>검색</Button><Button icon={<ReloadOutlined />} onClick={() => { searchForm.resetFields(); setFilters({}); setPage(1); }}>초기화</Button></Space></Form.Item>
+                </Form>
+            </Card>
             <Card styles={{ body: { padding: 12 } }}>
                 <PermissionGuard permission="notice:manage">
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} style={{ marginBottom: 12 }}>등록</Button>
@@ -49,8 +62,18 @@ export default function NoticeListPage() {
                 <Table<Notice>
                     rowKey="id"
                     loading={isLoading}
-                    dataSource={notices}
-                    pagination={false}
+                    dataSource={data?.content ?? []}
+                    pagination={{
+                        current: page,
+                        pageSize,
+                        total: data?.total ?? 0,
+                        showSizeChanger: true,
+                        showTotal: (total) => `총 ${total}건`,
+                        onChange: (nextPage, nextSize) => {
+                            setPage(nextSize !== pageSize ? 1 : nextPage);
+                            setPageSize(nextSize);
+                        },
+                    }}
                     columns={[
                         { title: "번호", dataIndex: "id", width: 80 },
                         { title: "제목", render: (_, item) => <Space>{item.pinned && <Tag color="blue">고정</Tag>}{item.title}</Space> },

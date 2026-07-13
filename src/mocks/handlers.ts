@@ -24,6 +24,12 @@ import { findEmployeeConflict, validateEmployeeBatch } from "../features/employe
 import { queryEmployeePage } from "../features/employees/query";
 import type { EmployeeListParams } from "../features/employees/types";
 import { createSubmissionHistory, transitionRequest } from "../features/requests/workflow";
+import type { RequestListParams } from "../features/requests/types";
+import { queryRequestPage } from "../features/requests/query";
+import type { NoticeListParams } from "../features/notices/types";
+import { queryNoticePage } from "../features/notices/query";
+import type { LogListParams } from "../features/logs/types";
+import { queryLogPage } from "../features/logs/query";
 
 const API_DELAY = 250;
 
@@ -239,18 +245,27 @@ export const handlers = [
         if (denied) return denied;
         await delay(API_DELAY);
         const searchParams = new URL(request.url).searchParams;
-        const type = searchParams.get("type") as RequestType | null;
-        const scope = searchParams.get("scope");
+        const params: RequestListParams = {
+            type: (searchParams.get("type") as RequestType) || undefined,
+            scope: (searchParams.get("scope") as RequestListParams["scope"]) || undefined,
+            view: (searchParams.get("view") as RequestListParams["view"]) || undefined,
+            status: (searchParams.get("status") as RequestListParams["status"]) || undefined,
+            keyword: searchParams.get("keyword") || undefined,
+            startDate: searchParams.get("startDate") || undefined,
+            endDate: searchParams.get("endDate") || undefined,
+            page: Number(searchParams.get("page") ?? 1),
+            size: Number(searchParams.get("size") ?? 10),
+        };
         const account = getAccountFromRequest(request)!;
         let requests = mockDatabase.getRequests();
 
-        if (scope === "mine" || account.role === "EMPLOYEE") {
+        if (params.scope === "mine" || account.role === "EMPLOYEE") {
             requests = requests.filter((item) => item.requester === account.displayName);
         } else if (account.role === "DEPT_MANAGER") {
             requests = requests.filter((item) => item.department === account.department);
         }
 
-        return HttpResponse.json(type ? requests.filter((item) => item.type === type) : requests);
+        return HttpResponse.json(queryRequestPage(requests, params));
     }),
 
     http.post("/api/approval-requests", async ({ request }) => {
@@ -427,7 +442,16 @@ export const handlers = [
         const denied = requirePermission(request, "notice:read");
         if (denied) return denied;
         await delay(API_DELAY);
-        return HttpResponse.json(mockDatabase.getNotices());
+        const searchParams = new URL(request.url).searchParams;
+        const pinnedValue = searchParams.get("pinned");
+        const params: NoticeListParams = {
+            keyword: searchParams.get("keyword") || undefined,
+            author: searchParams.get("author") || undefined,
+            pinned: pinnedValue === null || pinnedValue === "" ? undefined : pinnedValue === "true",
+            page: Number(searchParams.get("page") ?? 1),
+            size: Number(searchParams.get("size") ?? 10),
+        };
+        return HttpResponse.json(queryNoticePage(mockDatabase.getNotices(), params));
     }),
 
     http.post("/api/notices", async ({ request }) => {
@@ -479,8 +503,17 @@ export const handlers = [
         const denied = requirePermission(request, "log:read");
         if (denied) return denied;
         await delay(API_DELAY);
-        const type = new URL(request.url).searchParams.get("type") as LogType;
-        return HttpResponse.json(mockDatabase.getLogs().filter((item) => item.type === type));
+        const searchParams = new URL(request.url).searchParams;
+        const params: LogListParams = {
+            type: searchParams.get("type") as LogType,
+            user: searchParams.get("user") || undefined,
+            result: (searchParams.get("result") as LogListParams["result"]) || undefined,
+            startDate: searchParams.get("startDate") || undefined,
+            endDate: searchParams.get("endDate") || undefined,
+            page: Number(searchParams.get("page") ?? 1),
+            size: Number(searchParams.get("size") ?? 10),
+        };
+        return HttpResponse.json(queryLogPage(mockDatabase.getLogs(), params));
     }),
 
     http.get("/api/menus", async ({ request }) => {

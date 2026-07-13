@@ -2,10 +2,10 @@ import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Alert, Button, Card, DatePicker, Form, Input, Select, Space, Table, Tag } from "antd";
 import { useMemo, useState } from "react";
-import dayjs, { type Dayjs } from "dayjs";
+import type { Dayjs } from "dayjs";
 import PageTitle from "../components/PageTitle";
 import { getLogs } from "../features/logs/api";
-import type { LogRecord, LogType } from "../features/logs/types";
+import type { LogListParams, LogRecord, LogType } from "../features/logs/types";
 
 interface SearchValues {
     user?: string;
@@ -14,26 +14,24 @@ interface SearchValues {
 }
 
 export default function LogListPage({ type }: { type: LogType }) {
-    const { data: logs = [], isLoading, isError } = useQuery({
-        queryKey: ["logs", type],
-        queryFn: () => getLogs(type),
+    const [search, setSearch] = useState<SearchValues>({});
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const params = useMemo<LogListParams>(() => ({
+        type,
+        user: search.user?.trim() || undefined,
+        result: search.result,
+        startDate: search.dateRange?.[0].format("YYYY-MM-DD"),
+        endDate: search.dateRange?.[1].format("YYYY-MM-DD"),
+        page,
+        size: pageSize,
+    }), [page, pageSize, search, type]);
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ["logs", params],
+        queryFn: () => getLogs(params),
         refetchOnMount: "always",
     });
-    const [search, setSearch] = useState<SearchValues>({});
     const [form] = Form.useForm<SearchValues>();
-    const filteredLogs = useMemo(
-        () =>
-            logs.filter(
-                (item) =>
-                    (!search.user || item.user.includes(search.user)) &&
-                    (!search.result || item.result === search.result) &&
-                    (!search.dateRange || (
-                        !dayjs(item.createdAt).isBefore(search.dateRange[0].startOf("day")) &&
-                        !dayjs(item.createdAt).isAfter(search.dateRange[1].endOf("day"))
-                    )),
-            ),
-        [logs, search],
-    );
 
     return (
         <div>
@@ -43,7 +41,7 @@ export default function LogListPage({ type }: { type: LogType }) {
             />
             {isError && <Alert type="error" showIcon message="로그 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
-                <Form form={form} layout="inline" onFinish={setSearch}>
+                <Form form={form} layout="inline" onFinish={(values) => { setSearch(values); setPage(1); }}>
                     <Form.Item label="사용자" name="user"><Input allowClear placeholder="사용자 검색" /></Form.Item>
                     <Form.Item label="결과" name="result">
                         <Select allowClear style={{ width: 140 }} options={[{ label: "성공", value: "SUCCESS" }, { label: "실패", value: "FAIL" }]} />
@@ -57,6 +55,7 @@ export default function LogListPage({ type }: { type: LogType }) {
                                 onClick={() => {
                                     form.resetFields();
                                     setSearch({});
+                                    setPage(1);
                                 }}
                             >
                                 초기화
@@ -69,8 +68,18 @@ export default function LogListPage({ type }: { type: LogType }) {
                 <Table<LogRecord>
                     rowKey="id"
                     loading={isLoading}
-                    dataSource={filteredLogs}
-                    pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `총 ${total}건` }}
+                    dataSource={data?.content ?? []}
+                    pagination={{
+                        current: page,
+                        pageSize,
+                        total: data?.total ?? 0,
+                        showSizeChanger: true,
+                        showTotal: (total) => `총 ${total}건`,
+                        onChange: (nextPage, nextSize) => {
+                            setPage(nextSize !== pageSize ? 1 : nextPage);
+                            setPageSize(nextSize);
+                        },
+                    }}
                     columns={[
                         { title: "사용자", dataIndex: "user" },
                         { title: "모듈", dataIndex: "module" },

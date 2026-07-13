@@ -27,6 +27,18 @@ export interface RequestRecord {
     approvalHistory?: ApprovalHistoryEntry[];
 }
 
+export interface RequestListParams {
+    type?: RequestType;
+    scope?: "all" | "mine";
+    view?: "pending" | "history";
+    status?: ApprovalStatus;
+    keyword?: string;
+    startDate?: string;
+    endDate?: string;
+    page: number;
+    size: number;
+}
+
 export const REQUEST_TYPE_TEXT: Record<RequestType, string> = {
     LEAVE: "휴가",
     OVERTIME: "연장근무",

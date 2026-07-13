@@ -10,3 +10,13 @@ export interface LogRecord {
     result: "SUCCESS" | "FAIL";
     createdAt: string;
 }
+
+export interface LogListParams {
+    type: LogType;
+    user?: string;
+    result?: LogRecord["result"];
+    startDate?: string;
+    endDate?: string;
+    page: number;
+    size: number;
+}

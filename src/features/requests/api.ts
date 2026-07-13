@@ -1,11 +1,12 @@
 import { apiClient } from "../../api/client";
-import type { RequestRecord, RequestType } from "./types";
+import type { PageResponse } from "../../types/page";
+import type { RequestListParams, RequestRecord } from "./types";
 
 export type RequestPayload = Omit<RequestRecord, "id">;
 
-export async function getRequests(type?: RequestType, scope?: "all" | "mine") {
-    const response = await apiClient.get<RequestRecord[]>("/approval-requests", {
-        params: { type, scope },
+export async function getRequests(params: RequestListParams) {
+    const response = await apiClient.get<PageResponse<RequestRecord>>("/approval-requests", {
+        params,
     });
     return response.data;
 }

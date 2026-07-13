@@ -1,6 +1,8 @@
-import { Alert, Button, Card, Descriptions, Input, message, Modal, Popconfirm, Space, Table, Tag, Timeline, Typography } from "antd";
+import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, DatePicker, Descriptions, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag, Timeline, Typography } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
+import dayjs, { type Dayjs } from "dayjs";
 import { useMemo, useState } from "react";
 import PageTitle from "../components/PageTitle";
 import PermissionGuard from "../components/PermissionGuard";
@@ -11,12 +13,21 @@ import {
     REQUEST_TYPE_TEXT,
     type ApprovalAction,
     type ApprovalHistoryEntry,
+    type ApprovalStatus,
+    type RequestListParams,
     type RequestRecord,
+    type RequestType,
 } from "../features/requests/types";
 import { createSubmissionHistory } from "../features/requests/workflow";
 
 type ApprovalMode = "pending" | "mine" | "history";
 interface ApprovalPageProps { mode: ApprovalMode; }
+interface SearchValues {
+    keyword?: string;
+    type?: RequestType;
+    status?: ApprovalStatus;
+    dateRange?: [Dayjs, Dayjs];
+}
 
 const ACTION_TEXT: Record<ApprovalAction, string> = {
     SUBMITTED: "신청 제출",
@@ -34,9 +45,24 @@ const ACTION_COLOR: Record<ApprovalAction, string> = {
 
 export default function ApprovalPage({ mode }: ApprovalPageProps) {
     const queryClient = useQueryClient();
-    const { data: requests = [], isLoading, isError } = useQuery({
-        queryKey: ["requests", "all", mode],
-        queryFn: () => getRequests(undefined, mode === "mine" ? "mine" : "all"),
+    const [search, setSearch] = useState<SearchValues>({});
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [searchForm] = Form.useForm<SearchValues>();
+    const params = useMemo<RequestListParams>(() => ({
+        scope: mode === "mine" ? "mine" : "all",
+        view: mode === "mine" ? undefined : mode,
+        keyword: search.keyword?.trim() || undefined,
+        type: search.type,
+        status: mode === "mine" ? search.status : undefined,
+        startDate: search.dateRange?.[0].format("YYYY-MM-DD"),
+        endDate: search.dateRange?.[1].format("YYYY-MM-DD"),
+        page,
+        size: pageSize,
+    }), [mode, page, pageSize, search]);
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ["requests", params],
+        queryFn: () => getRequests(params),
     });
     const [selected, setSelected] = useState<RequestRecord | null>(null);
     const [comment, setComment] = useState("");
@@ -54,15 +80,6 @@ export default function ApprovalPage({ mode }: ApprovalPageProps) {
         mine: ["내 신청함", "내가 제출한 신청의 진행 상태입니다."],
         history: ["결재 이력", "처리 완료된 결재 이력입니다."],
     }[mode];
-    const data = useMemo(
-        () => mode === "pending"
-            ? requests.filter((item) => item.status === "PENDING")
-            : mode === "history"
-                ? requests.filter((item) => ["APPROVED", "REJECTED", "CANCELLED"].includes(item.status))
-                : requests,
-        [mode, requests],
-    );
-
     const showError = (error: unknown, fallback: string) => {
         const apiMessage = axios.isAxiosError<{ message?: string }>(error)
             ? error.response?.data.message
@@ -125,12 +142,31 @@ export default function ApprovalPage({ mode }: ApprovalPageProps) {
         <div>
             <PageTitle title={config[0]} description={config[1]} />
             {isError && <Alert type="error" showIcon message="결재 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
+                <Form form={searchForm} layout="inline" onFinish={(values) => { setSearch(values); setPage(1); }}>
+                    <Form.Item label="검색어" name="keyword"><Input allowClear placeholder="신청번호, 제목, 신청자" /></Form.Item>
+                    <Form.Item label="유형" name="type"><Select allowClear style={{ width: 140 }} options={[{ label: "휴가", value: "LEAVE" }, { label: "연장근무", value: "OVERTIME" }, { label: "출장", value: "BUSINESS_TRIP" }]} /></Form.Item>
+                    {mode === "mine" && <Form.Item label="상태" name="status"><Select allowClear style={{ width: 140 }} options={Object.entries(APPROVAL_STATUS_TEXT).map(([value, label]) => ({ value, label }))} /></Form.Item>}
+                    <Form.Item label="신청 기간" name="dateRange"><DatePicker.RangePicker presets={[{ label: "최근 7일", value: [dayjs().subtract(6, "day"), dayjs()] }]} /></Form.Item>
+                    <Form.Item><Space><Button type="primary" htmlType="submit" icon={<SearchOutlined />}>검색</Button><Button icon={<ReloadOutlined />} onClick={() => { searchForm.resetFields(); setSearch({}); setPage(1); }}>초기화</Button></Space></Form.Item>
+                </Form>
+            </Card>
             <Card styles={{ body: { padding: 12 } }}>
                 <Table<RequestRecord>
                     rowKey="id"
                     loading={isLoading}
-                    dataSource={data}
-                    pagination={{ pageSize: 10, showTotal: (total) => `총 ${total}건` }}
+                    dataSource={data?.content ?? []}
+                    pagination={{
+                        current: page,
+                        pageSize,
+                        total: data?.total ?? 0,
+                        showSizeChanger: true,
+                        showTotal: (total) => `총 ${total}건`,
+                        onChange: (nextPage, nextSize) => {
+                            setPage(nextSize !== pageSize ? 1 : nextPage);
+                            setPageSize(nextSize);
+                        },
+                    }}
                     columns={[
                         { title: "신청번호", dataIndex: "requestNo" },
                         { title: "유형", render: (_, item) => REQUEST_TYPE_TEXT[item.type] },
