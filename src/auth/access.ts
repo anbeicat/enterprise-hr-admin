@@ -11,6 +11,7 @@ export type Permission =
     | "request:create"
     | "approval:process"
     | "attendance:read"
+    | "attendance:write"
     | "notice:read"
     | "notice:manage"
     | "log:read"
@@ -27,6 +28,7 @@ export const ALL_PERMISSIONS: Permission[] = [
     "request:create",
     "approval:process",
     "attendance:read",
+    "attendance:write",
     "notice:read",
     "notice:manage",
     "log:read",
@@ -44,6 +46,7 @@ export const PERMISSION_OPTIONS: { label: string; value: Permission }[] = [
     { label: "휴가/연장근무/출장 신청", value: "request:create" },
     { label: "결재 승인/반려", value: "approval:process" },
     { label: "근태 조회", value: "attendance:read" },
+    { label: "근태 기록 수정", value: "attendance:write" },
     { label: "공지 조회", value: "notice:read" },
     { label: "공지 등록/수정/삭제", value: "notice:manage" },
     { label: "감사/로그인 로그 조회", value: "log:read" },
@@ -60,6 +63,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         "request:create",
         "approval:process",
         "attendance:read",
+        "attendance:write",
         "notice:read",
         "notice:manage",
         "log:read",

@@ -57,9 +57,12 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 ### 근태 및 운영 관리
 
 - 일별 근태 현황과 상태 표시
-- 월별 출근율, 지각, 휴가, 연장근무 통계
-- 근태 현황 REST API 조회
-- 부서별 출근율 시각화
+- 월·근무일·직원·부서·상태 기준 근태 검색과 서버 페이지네이션
+- 조회 결과 기반 출근율, 지각, 휴가, 연장근무 동적 집계
+- 부서별 월간 출근율 시각화
+- 인사 관리자용 출퇴근 시간·근무시간·상태 보정 및 감사 로그
+- 근태 데이터 Excel(.xlsx) 내보내기
+- 근태 현황 REST API 조회·수정과 로컬 데이터 유지
 - 공지사항 등록, 수정, 삭제, 상단 고정
 - 공지사항 REST API 저장과 캐시 갱신
 - 감사 로그 및 로그인 로그 API 조회·검색
@@ -145,7 +148,7 @@ GitHub Actions는 `main` Push 및 Pull Request마다 테스트, ESLint, Producti
 
 ## API 연동 방향
 
-현재 직원·조직·역할·메뉴·코드·신청·결재·근태·공지 데이터와 로그 조회는 MSW가 제공하는 REST API로 동작합니다. 변경 가능한 데이터는 브라우저 `localStorage`에 유지됩니다. 화면에서는 Axios로 API를 호출하고 TanStack Query로 조회, 캐시 무효화, Loading/Error/Empty 상태를 관리합니다. 페이지는 React lazy loading으로 분리되어 필요한 화면만 로드합니다. `src/api/client.ts`에는 Spring Boot 연동을 고려한 Bearer Token interceptor와 401 처리도 구성되어 있습니다.
+현재 직원·조직·역할·메뉴·코드·신청·결재·근태·공지 데이터와 로그 조회는 MSW가 제공하는 REST API로 동작합니다. 변경 가능한 데이터는 브라우저 `localStorage`에 유지됩니다. 화면에서는 Axios로 API를 호출하고 TanStack Query로 조회, 캐시 무효화, Loading/Error/Empty 상태를 관리합니다. 근태 화면은 Spring Boot Page 스타일의 조건 조회와 동적 집계를 사용하며, 보정 결과는 Dashboard와 감사 로그에도 반영됩니다. 페이지는 React lazy loading으로 분리되어 필요한 화면만 로드합니다. `src/api/client.ts`에는 Spring Boot 연동을 고려한 Bearer Token interceptor와 401 처리도 구성되어 있습니다.
 
 `ADMIN`, `HR_MANAGER`, `DEPT_MANAGER`, `EMPLOYEE` 역할은 중앙 권한 정책에 따라 메뉴, 라우트, 업무 버튼 접근 범위가 다릅니다. 시스템 관리자는 Header의 초기화 버튼으로 변경된 데모 데이터를 최초 상태로 복원할 수 있습니다.
 

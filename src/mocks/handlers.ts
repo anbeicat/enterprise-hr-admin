@@ -14,7 +14,8 @@ import type { NoticeFormValues } from "../features/notices/types";
 import type { LogType } from "../features/logs/types";
 import { initialMenus } from "../features/menus/mockData";
 import type { CodePayload } from "../features/codes/types";
-import { initialAttendance } from "../features/attendance/mockData";
+import type { AttendanceListParams, AttendanceUpdatePayload } from "../features/attendance/types";
+import { queryAttendancePage } from "../features/attendance/query";
 import { getAccountFromRequest, requireAuthentication, requirePermission } from "./auth";
 import { DEMO_ACCOUNTS } from "../auth/accounts";
 import type { LoginPayload } from "../api/auth";
@@ -98,7 +99,11 @@ export const handlers = [
                 : allRequests;
         const attendanceByDepartment = new Map<string, { present: number; total: number }>();
 
-        initialAttendance.forEach((item) => {
+        const attendance = mockDatabase.getAttendance();
+        const latestWorkDate = attendance.reduce((latest, item) => item.workDate > latest ? item.workDate : latest, "");
+        const latestAttendance = attendance.filter((item) => item.workDate === latestWorkDate);
+
+        latestAttendance.forEach((item) => {
             const summary = attendanceByDepartment.get(item.department) ?? { present: 0, total: 0 };
             summary.total += 1;
             if (item.status !== "LEAVE") summary.present += 1;
@@ -108,7 +113,7 @@ export const handlers = [
         return HttpResponse.json({
             totalEmployees: employees.filter((item) => item.status === "ACTIVE").length,
             pendingApprovals: visibleRequests.filter((item) => item.status === "PENDING").length,
-            todayPresent: initialAttendance.filter((item) => item.status !== "LEAVE").length,
+            todayPresent: latestAttendance.filter((item) => item.status !== "LEAVE").length,
             monthlyLeave: visibleRequests.filter((item) => item.type === "LEAVE").length,
             pendingRequests: visibleRequests
                 .filter((item) => item.status === "PENDING")
@@ -520,7 +525,37 @@ export const handlers = [
         const denied = requirePermission(request, "attendance:read");
         if (denied) return denied;
         await delay(API_DELAY);
-        return HttpResponse.json(initialAttendance);
+        const url = new URL(request.url);
+        const params: AttendanceListParams = {
+            month: url.searchParams.get("month") ?? "2026-07",
+            keyword: url.searchParams.get("keyword") || undefined,
+            department: url.searchParams.get("department") || undefined,
+            status: (url.searchParams.get("status") as AttendanceListParams["status"]) || undefined,
+            workDate: url.searchParams.get("workDate") || undefined,
+            page: Number(url.searchParams.get("page") ?? 1),
+            size: Number(url.searchParams.get("size") ?? 10),
+        };
+        return HttpResponse.json(queryAttendancePage(mockDatabase.getAttendance(), params));
+    }),
+
+    http.put("/api/attendance/:id", async ({ params, request }) => {
+        const denied = requirePermission(request, "attendance:write");
+        if (denied) return denied;
+        await delay(API_DELAY);
+        const id = Number(params.id);
+        const records = mockDatabase.getAttendance();
+        const current = records.find((item) => item.id === id);
+        if (!current) return HttpResponse.json({ message: "근태 기록을 찾을 수 없습니다." }, { status: 404 });
+        const values = (await request.json()) as AttendanceUpdatePayload;
+        const updated = { ...current, ...values };
+        mockDatabase.saveAttendance(records.map((item) => item.id === id ? updated : item));
+        recordLog({
+            request,
+            user: getAccountFromRequest(request)!.username,
+            module: "근태 관리",
+            action: `${current.employeeNo} ${current.workDate} 근태 기록 수정`,
+        });
+        return HttpResponse.json(updated);
     }),
 
     http.post("/api/demo/reset", async ({ request }) => {
