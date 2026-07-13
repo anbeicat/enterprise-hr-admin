@@ -185,7 +185,7 @@ export default function EmployeeListPage() {
                 <Alert
                     type="error"
                     showIcon
-                    message="직원 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+                    title="직원 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
                     style={{ marginBottom: 12 }}
                 />
             )}

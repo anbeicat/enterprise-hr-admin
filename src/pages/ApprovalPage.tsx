@@ -141,7 +141,7 @@ export default function ApprovalPage({ mode }: ApprovalPageProps) {
     return (
         <div>
             <PageTitle title={config[0]} description={config[1]} />
-            {isError && <Alert type="error" showIcon message="결재 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            {isError && <Alert type="error" showIcon title="결재 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <Form form={searchForm} layout="inline" onFinish={(values) => { setSearch(values); setPage(1); }}>
                     <Form.Item label="검색어" name="keyword"><Input allowClear placeholder="신청번호, 제목, 신청자" /></Form.Item>
@@ -204,7 +204,7 @@ export default function ApprovalPage({ mode }: ApprovalPageProps) {
                         <Typography.Title level={5} style={{ marginTop: 20 }}>결재 이력</Typography.Title>
                         <Timeline items={history.map((item) => ({
                             color: ACTION_COLOR[item.action],
-                            children: (
+                            content: (
                                 <div>
                                     <Typography.Text strong>{ACTION_TEXT[item.action]}</Typography.Text>
                                     <div><Typography.Text>{item.actor}</Typography.Text> · <Typography.Text type="secondary">{item.processedAt}</Typography.Text></div>

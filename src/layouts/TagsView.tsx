@@ -1,5 +1,5 @@
 import { CloseOutlined } from "@ant-design/icons";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTE_META } from "../routes/routeMeta";
 import {
@@ -25,36 +25,51 @@ export default function TagsView() {
     const location = useLocation();
     const [tags, setTags] = useState<TagItem[]>(readStoredTags);
     const [suppressedPath, setSuppressedPath] = useState<string | null>(null);
+    const scrollContainer = useRef<HTMLDivElement>(null);
     const tagElements = useRef(new Map<string, HTMLDivElement>());
     const currentMeta = ROUTE_META[location.pathname];
 
-    if (suppressedPath && suppressedPath !== location.pathname) {
-        setSuppressedPath(null);
-    }
+    useEffect(() => {
+        // The router location is external state; clear a one-route close guard after navigation.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSuppressedPath((current) => (
+            current && current !== location.pathname ? null : current
+        ));
+    }, [location.pathname]);
 
-    if (
-        currentMeta &&
-        location.pathname !== "/403" &&
-        suppressedPath !== location.pathname &&
-        !tags.some((item) => item.path === location.pathname)
-    ) {
-        setTags(appendTag(tags, {
+    useEffect(() => {
+        if (
+            !currentMeta ||
+            location.pathname === "/403" ||
+            suppressedPath === location.pathname
+        ) return;
+
+        // Keep the visited-page state synchronized with React Router's external location.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setTags((current) => appendTag(current, {
             path: location.pathname,
             title: currentMeta.title,
         }));
-    }
+    }, [currentMeta, location.pathname, suppressedPath]);
 
     useEffect(() => {
         sessionStorage.setItem(TAGS_STORAGE_KEY, JSON.stringify(tags));
     }, [tags]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
+        const container = scrollContainer.current;
         const activeTag = tagElements.current.get(location.pathname);
-        activeTag?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-            inline: "nearest",
-        });
+        if (!container || !activeTag) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const activeRect = activeTag.getBoundingClientRect();
+        const edgePadding = 12;
+
+        if (activeRect.left < containerRect.left + edgePadding) {
+            container.scrollLeft -= containerRect.left + edgePadding - activeRect.left;
+        } else if (activeRect.right > containerRect.right - edgePadding) {
+            container.scrollLeft += activeRect.right - containerRect.right + edgePadding;
+        }
     }, [location.pathname, tags]);
 
     const closeTag = (path: string) => {
@@ -66,6 +81,7 @@ export default function TagsView() {
 
     return (
         <div
+            ref={scrollContainer}
             className="tags-scroll"
             style={{
                 height: 36,

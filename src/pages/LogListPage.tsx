@@ -39,7 +39,7 @@ export default function LogListPage({ type }: { type: LogType }) {
                 title={type === "audit" ? "감사 로그" : "로그인 로그"}
                 description="시스템 접근과 주요 업무 처리 이력을 조회합니다."
             />
-            {isError && <Alert type="error" showIcon message="로그 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            {isError && <Alert type="error" showIcon title="로그 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <Form form={form} layout="inline" onFinish={(values) => { setSearch(values); setPage(1); }}>
                     <Form.Item label="사용자" name="user"><Input allowClear placeholder="사용자 검색" /></Form.Item>

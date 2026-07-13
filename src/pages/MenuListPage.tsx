@@ -120,7 +120,7 @@ export default function MenuListPage() {
     return (
         <div>
             <PageTitle title="메뉴 관리" description="화면 메뉴와 버튼 권한을 구성하고 내비게이션 노출을 제어합니다." />
-            {isError && <Alert type="error" showIcon message="메뉴 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            {isError && <Alert type="error" showIcon title="메뉴 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <Form form={searchForm} layout="inline" onFinish={setSearch}>
                     <Form.Item label="메뉴명" name="name"><Input allowClear placeholder="메뉴명을 입력하세요" /></Form.Item>

@@ -22,7 +22,7 @@ export default function CodeListPage() {
     return (
         <div>
             <PageTitle title="코드 관리" description="직급, 휴가 유형, 직원 상태 등의 공통 코드를 관리합니다." />
-            {isError && <Alert type="error" showIcon message="코드 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            {isError && <Alert type="error" showIcon title="코드 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card styles={{ body: { padding: 12 } }}>
                 <Tabs
                     activeKey={group}

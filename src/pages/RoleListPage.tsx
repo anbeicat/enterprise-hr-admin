@@ -76,7 +76,7 @@ export default function RoleListPage() {
     return (
         <div>
             <PageTitle title="역할 관리" description="역할별 메뉴 및 업무 권한을 관리합니다." />
-            {isError && <Alert type="error" showIcon message="역할 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            {isError && <Alert type="error" showIcon title="역할 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card styles={{ body: { padding: 12 } }}>
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} style={{ marginBottom: 12 }}>
                     등록

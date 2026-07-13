@@ -40,7 +40,7 @@ enableMocking().then(() => {
             renderEmpty={() => <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="조회된 데이터가 없습니다." />}
           >
             <AppErrorBoundary>
-              <React.Suspense fallback={<Spin fullscreen tip="화면을 불러오는 중입니다." />}>
+              <React.Suspense fallback={<Spin fullscreen description="화면을 불러오는 중입니다." />}>
                 <RouterProvider router={router} />
               </React.Suspense>
             </AppErrorBoundary>

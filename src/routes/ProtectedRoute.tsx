@@ -33,7 +33,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         return <Navigate to="/login" replace />;
     }
 
-    if (isLoading) return <Spin fullscreen tip="사용자 권한을 확인하는 중입니다." />;
+    if (isLoading) return <Spin fullscreen description="사용자 권한을 확인하는 중입니다." />;
     if (isError) return <Navigate to="/login" replace />;
 
     return children;

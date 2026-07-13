@@ -144,7 +144,7 @@ export default function AttendancePage({ mode }: { mode: "status" | "monthly" })
                 title={mode === "status" ? "근태 현황" : "월별 근태 통계"}
                 description="조회 조건과 동일한 데이터로 출근율과 월별 근태 지표를 집계합니다."
             />
-            {isError && <Alert type="error" showIcon message="근태 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            {isError && <Alert type="error" showIcon title="근태 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
 
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <Form form={form} layout="inline" onFinish={handleSearch}>
@@ -203,7 +203,7 @@ export default function AttendancePage({ mode }: { mode: "status" | "monthly" })
                                 </Col>
                             ))}
                         </Row>
-                    ) : <Alert type="info" showIcon message="선택한 조건에 해당하는 월별 근태 데이터가 없습니다." />}
+                    ) : <Alert type="info" showIcon title="선택한 조건에 해당하는 월별 근태 데이터가 없습니다." />}
                 </Card>
             )}
 

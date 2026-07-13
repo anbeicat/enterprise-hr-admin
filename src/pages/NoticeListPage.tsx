@@ -46,7 +46,7 @@ export default function NoticeListPage() {
     return (
         <div>
             <PageTitle title="공지사항" description="사내 공지사항을 등록하고 관리합니다." />
-            {isError && <Alert type="error" showIcon message="공지사항을 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            {isError && <Alert type="error" showIcon title="공지사항을 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <Form form={searchForm} layout="inline" onFinish={(values) => { setFilters(values); setPage(1); }}>
                     <Form.Item label="검색어" name="keyword"><Input allowClear placeholder="제목 또는 내용" /></Form.Item>

@@ -126,7 +126,7 @@ export default function DepartmentListPage() {
                 <Alert
                     type="error"
                     showIcon
-                    message="조직 정보를 불러오지 못했습니다."
+                    title="조직 정보를 불러오지 못했습니다."
                     style={{ marginBottom: 12 }}
                 />
             )}

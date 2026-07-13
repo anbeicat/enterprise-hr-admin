@@ -18,7 +18,7 @@ export default function DashboardPage() {
                 <Alert
                     type="error"
                     showIcon
-                    message="대시보드 정보를 불러오지 못했습니다."
+                    title="대시보드 정보를 불러오지 못했습니다."
                     style={{ marginBottom: 16 }}
                 />
             )}

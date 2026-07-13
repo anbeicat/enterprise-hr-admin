@@ -46,7 +46,7 @@ export default function RequestListPage({ type }: RequestListPageProps) {
     return (
         <div>
             <PageTitle title={title} description={`${REQUEST_TYPE_TEXT[type]} 신청 내역을 조회하고 새 신청을 제출합니다.`} />
-            {isError && <Alert type="error" showIcon message="신청 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
+            {isError && <Alert type="error" showIcon title="신청 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
                 <Form form={searchForm} layout="inline" onFinish={(values) => { setKeyword(values.keyword?.trim() ?? ""); setStatus(values.status); setPage(1); }}>
                     <Form.Item label="제목" name="keyword"><Input allowClear placeholder="제목 검색" /></Form.Item>
