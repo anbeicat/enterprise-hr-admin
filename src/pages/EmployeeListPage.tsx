@@ -6,7 +6,7 @@
  * @description: 职员管理
  * @FilePath: /enterprise-hr-admin/src/pages/EmployeeListPage.tsx
  */
-import { Alert, Card, message, Modal } from "antd";
+import { Alert, App, Card, Modal } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import EmployeeFormModal from "../features/employees/components/EmployeeFormModal";
@@ -31,6 +31,7 @@ import { downloadEmployeeWorkbook, parseEmployeeWorkbook } from "../utils/excel"
 type EmployeeFormValues = Omit<Employee, "id">;
 
 export default function EmployeeListPage() {
+    const { message } = App.useApp();
     const queryClient = useQueryClient();
     const [searchParams, setSearchParams] = useState<EmployeeSearchParams>({});
     const [page, setPage] = useState(1);

@@ -8,13 +8,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Alert,
+    App,
     Button,
     Card,
     Col,
     Form,
     Input,
     InputNumber,
-    message,
     Modal,
     Popconfirm,
     Radio,
@@ -44,6 +44,7 @@ const TYPE_TEXT: Record<MenuRecord["type"], string> = {
 };
 
 export default function MenuListPage() {
+    const { message } = App.useApp();
     const queryClient = useQueryClient();
     const [searchForm] = Form.useForm<SearchValues>();
     const [form] = Form.useForm<MenuFormValues>();

@@ -22,6 +22,10 @@ body {
   color: #303133;
 }
 
+.ant-spin-fullscreen .ant-spin-description {
+  color: #262626;
+}
+
 .sidebar-scroll {
   scrollbar-width: thin;
   scrollbar-color: #4b5568 #191f2f;

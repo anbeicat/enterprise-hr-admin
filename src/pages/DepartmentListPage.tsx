@@ -5,7 +5,7 @@ import {
     PlusOutlined,
     PlusSquareOutlined,
 } from "@ant-design/icons";
-import { Alert, Button, Card, message, Popconfirm, Space } from "antd";
+import { Alert, App, Button, Card, Popconfirm, Space } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import DepartmentFormModal from "../features/departments/components/DepartmentFormModal";
@@ -28,6 +28,7 @@ import {
 } from "../features/departments/utils";
 
 export default function DepartmentListPage() {
+    const { message } = App.useApp();
     const queryClient = useQueryClient();
     const { data: departments = [], isLoading, isError } = useQuery({
         queryKey: ["departments"],

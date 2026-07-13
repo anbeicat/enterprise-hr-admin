@@ -8,7 +8,7 @@
  */
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { ConfigProvider, Empty, Spin } from "antd";
+import { App as AntdApp, ConfigProvider, Empty, Spin } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import koKR from "antd/locale/ko_KR";
 import { Provider } from "react-redux";
@@ -37,13 +37,24 @@ enableMocking().then(() => {
         <QueryClientProvider client={queryClient}>
           <ConfigProvider
             locale={koKR}
+            theme={{
+              token: {
+                colorPrimary: "#0958d9",
+                colorLink: "#0958d9",
+                colorTextPlaceholder: "#6b7280",
+                colorTextSecondary: "#595959",
+                colorTextDescription: "#595959",
+              },
+            }}
             renderEmpty={() => <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="조회된 데이터가 없습니다." />}
           >
-            <AppErrorBoundary>
-              <React.Suspense fallback={<Spin fullscreen description="화면을 불러오는 중입니다." />}>
-                <RouterProvider router={router} />
-              </React.Suspense>
-            </AppErrorBoundary>
+            <AntdApp>
+              <AppErrorBoundary>
+                <React.Suspense fallback={<Spin fullscreen description="화면을 불러오는 중입니다." />}>
+                  <RouterProvider router={router} />
+                </React.Suspense>
+              </AppErrorBoundary>
+            </AntdApp>
           </ConfigProvider>
         </QueryClientProvider>
       </Provider>

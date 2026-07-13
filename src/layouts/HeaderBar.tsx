@@ -15,7 +15,7 @@ import {
     ReloadOutlined,
     SearchOutlined,
 } from "@ant-design/icons";
-import { Avatar, Badge, Button, Input, List, message, Modal, Popconfirm, Popover, Space, Tag, Tooltip, Typography } from "antd";
+import { App, Avatar, Badge, Button, Input, List, Modal, Popconfirm, Popover, Space, Tag, Tooltip, Typography } from "antd";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -41,6 +41,7 @@ export default function HeaderBar({
     collapsed,
     onToggleCollapsed,
 }: HeaderBarProps) {
+    const { message } = App.useApp();
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useAppDispatch();

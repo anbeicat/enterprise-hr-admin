@@ -61,7 +61,11 @@ export default function DashboardPage() {
                         {(data?.departmentAttendance ?? []).map((item) => (
                             <div key={item.department} style={{ marginBottom: 12 }}>
                                 <Text>{item.department}</Text>
-                                <Progress percent={item.percent} size="small" />
+                                <Progress
+                                    percent={item.percent}
+                                    size="small"
+                                    aria-label={`${item.department} 출근율 ${item.percent}%`}
+                                />
                             </div>
                         ))}
                     </Card>

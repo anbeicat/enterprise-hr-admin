@@ -1,12 +1,13 @@
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Card, Form, Input, message, Modal, Popconfirm, Select, Table, Tabs, Tag } from "antd";
+import { Alert, App, Button, Card, Form, Input, Modal, Popconfirm, Select, Table, Tabs, Tag } from "antd";
 import { useState } from "react";
 import PageTitle from "../components/PageTitle";
 import { createCode, deleteCode, getCodes } from "../features/codes/api";
 import type { CodeItem, CodePayload } from "../features/codes/types";
 
 export default function CodeListPage() {
+    const { message } = App.useApp();
     const queryClient = useQueryClient();
     const { data: codes = [], isLoading, isError } = useQuery({
         queryKey: ["codes"],

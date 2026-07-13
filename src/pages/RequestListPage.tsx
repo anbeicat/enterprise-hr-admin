@@ -1,5 +1,5 @@
 import { PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, DatePicker, Form, Input, message, Modal, Select, Space, Table, Tag } from "antd";
+import { Alert, App, Button, Card, DatePicker, Form, Input, Modal, Select, Space, Table, Tag } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
@@ -12,6 +12,7 @@ interface RequestFormValues { title: string; dateRange: [dayjs.Dayjs, dayjs.Dayj
 interface RequestSearchValues { keyword?: string; status?: ApprovalStatus; }
 
 export default function RequestListPage({ type }: RequestListPageProps) {
+    const { message } = App.useApp();
     const queryClient = useQueryClient();
     const [keyword, setKeyword] = useState("");
     const [status, setStatus] = useState<ApprovalStatus>();

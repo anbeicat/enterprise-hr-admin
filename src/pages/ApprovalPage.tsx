@@ -1,5 +1,5 @@
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, DatePicker, Descriptions, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag, Timeline, Typography } from "antd";
+import { Alert, App, Button, Card, DatePicker, Descriptions, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Timeline, Typography } from "antd";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import dayjs, { type Dayjs } from "dayjs";
@@ -44,6 +44,7 @@ const ACTION_COLOR: Record<ApprovalAction, string> = {
 };
 
 export default function ApprovalPage({ mode }: ApprovalPageProps) {
+    const { message } = App.useApp();
     const queryClient = useQueryClient();
     const [search, setSearch] = useState<SearchValues>({});
     const [page, setPage] = useState(1);

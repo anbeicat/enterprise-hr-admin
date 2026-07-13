@@ -11,7 +11,7 @@ import {
     SafetyCertificateOutlined,
     UserOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Checkbox, Form, Input, message, Typography } from "antd";
+import { App, Button, Card, Checkbox, Form, Input, Typography } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
@@ -29,6 +29,7 @@ interface LoginFormValues {
 }
 
 export default function LoginPage() {
+    const { message } = App.useApp();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const [submitting, setSubmitting] = useState(false);
@@ -125,42 +126,44 @@ export default function LoginPage() {
                         />
                     </Form.Item>
 
-                    <Form.Item
-                        name="code"
-                        rules={[{ required: true, message: "인증번호를 입력하세요" }]}
-                    >
-                        <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                        <Form.Item
+                            name="code"
+                            rules={[{ required: true, message: "인증번호를 입력하세요" }]}
+                            style={{ flex: 1 }}
+                        >
                             <Input
                                 size="large"
                                 prefix={
                                     <SafetyCertificateOutlined style={{ color: "#c0c4cc" }} />
                                 }
                                 placeholder="인증번호"
-                                style={{ flex: 1 }}
                             />
+                        </Form.Item>
 
-                            <div
-                                style={{
-                                    width: 110,
-                                    height: 40,
-                                    border: "1px solid #dcdfe6",
-                                    borderRadius: 2,
-                                    background: "#eef6e8",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    color: "#1d39c4",
-                                    fontSize: 22,
-                                    fontWeight: 700,
-                                    fontStyle: "italic",
-                                    letterSpacing: 2,
-                                    userSelect: "none",
-                                }}
-                            >
-                                9-8=?
-                            </div>
+                        <div
+                            role="img"
+                            aria-label="인증 문제: 9 빼기 8"
+                            style={{
+                                width: 110,
+                                height: 40,
+                                border: "1px solid #dcdfe6",
+                                borderRadius: 2,
+                                background: "#eef6e8",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "#1d39c4",
+                                fontSize: 22,
+                                fontWeight: 700,
+                                fontStyle: "italic",
+                                letterSpacing: 2,
+                                userSelect: "none",
+                            }}
+                        >
+                            9-8=?
                         </div>
-                    </Form.Item>
+                    </div>
 
                     <Form.Item name="remember" valuePropName="checked">
                         <Checkbox>아이디 저장</Checkbox>

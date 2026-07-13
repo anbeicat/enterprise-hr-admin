@@ -1,6 +1,6 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Card, Checkbox, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
+import { Alert, App, Button, Card, Checkbox, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
 import { useMemo, useState } from "react";
 import PageTitle from "../components/PageTitle";
 import { createNotice, deleteNotice, getNotices, updateNotice } from "../features/notices/api";
@@ -8,6 +8,7 @@ import type { Notice, NoticeFormValues, NoticeListParams } from "../features/not
 import PermissionGuard from "../components/PermissionGuard";
 
 export default function NoticeListPage() {
+    const { message } = App.useApp();
     const queryClient = useQueryClient();
     const [filters, setFilters] = useState<Pick<NoticeListParams, "keyword" | "author" | "pinned">>({});
     const [page, setPage] = useState(1);

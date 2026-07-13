@@ -50,6 +50,9 @@ export default function EmployeeTable({
             rowSelection={{
                 selectedRowKeys,
                 onChange: onSelectedRowKeysChange,
+                getCheckboxProps: (record) => ({
+                    title: `${record.employeeNo} 선택`,
+                }),
             }}
             pagination={{
                 current: page,

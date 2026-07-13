@@ -2,12 +2,12 @@ import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     Alert,
+    App,
     Button,
     Card,
     Checkbox,
     Form,
     Input,
-    message,
     Modal,
     Popconfirm,
     Select,
@@ -23,6 +23,7 @@ import { PERMISSION_OPTIONS } from "../auth/access";
 import axios from "axios";
 
 export default function RoleListPage() {
+    const { message } = App.useApp();
     const queryClient = useQueryClient();
     const { data: roles = [], isLoading, isError } = useQuery({
         queryKey: ["roles"],

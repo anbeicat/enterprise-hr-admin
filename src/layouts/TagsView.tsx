@@ -115,11 +115,11 @@ export default function TagsView() {
                             alignItems: "center",
                             gap: 6,
                             padding: "0 10px",
-                            border: `1px solid ${active ? "#1890ff" : "#d9d9d9"}`,
+                            border: `1px solid ${active ? "#0958d9" : "#d9d9d9"}`,
                             borderRadius: 2,
                             fontSize: 13,
                             background: active ? "#e6f4ff" : "#fff",
-                            color: active ? "#1890ff" : "#606266",
+                            color: active ? "#0958d9" : "#606266",
                             cursor: "pointer",
                             userSelect: "none",
                         }}

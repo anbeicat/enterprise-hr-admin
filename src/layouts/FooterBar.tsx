@@ -14,7 +14,7 @@ export default function FooterBar() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#909399",
+                color: "#595959",
                 fontSize: 13,
                 background: "#f0f2f5",
             }}
