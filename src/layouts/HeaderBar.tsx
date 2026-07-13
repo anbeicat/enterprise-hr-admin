@@ -26,6 +26,8 @@ import { getDashboardSummary } from "../features/dashboard/api";
 import { ROUTE_META } from "../routes/routeMeta";
 import { logout } from "../store/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { getMenus } from "../features/menus/api";
+import { getActiveMenuPaths } from "../features/menus/utils";
 
 const { Text } = Typography;
 
@@ -51,11 +53,17 @@ export default function HeaderBar({
         queryKey: ["dashboard"],
         queryFn: getDashboardSummary,
     });
+    const { data: configuredMenus } = useQuery({ queryKey: ["menus"], queryFn: getMenus });
+    const activeMenuPaths = useMemo(
+        () => configuredMenus ? getActiveMenuPaths(configuredMenus) : null,
+        [configuredMenus],
+    );
     const searchableRoutes = useMemo(
         () => Object.entries(ROUTE_META)
             .filter(([path]) => path !== "/403" && canAccessRoute(permissions, path))
+            .filter(([path]) => !activeMenuPaths || activeMenuPaths.has(path))
             .filter(([, meta]) => !searchKeyword || `${meta.title} ${meta.breadcrumb}`.toLowerCase().includes(searchKeyword.toLowerCase())),
-        [permissions, searchKeyword],
+        [activeMenuPaths, permissions, searchKeyword],
     );
 
     const handleLogout = () => {

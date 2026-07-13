@@ -12,7 +12,6 @@ import {
 import type { RoleFormValues } from "../features/roles/types";
 import type { NoticeFormValues } from "../features/notices/types";
 import type { LogType } from "../features/logs/types";
-import { initialMenus } from "../features/menus/mockData";
 import type { CodePayload } from "../features/codes/types";
 import type { AttendanceListParams, AttendanceUpdatePayload } from "../features/attendance/types";
 import { queryAttendancePage } from "../features/attendance/query";
@@ -30,6 +29,8 @@ import type { NoticeListParams } from "../features/notices/types";
 import { queryNoticePage } from "../features/notices/query";
 import type { LogListParams } from "../features/logs/types";
 import { queryLogPage } from "../features/logs/query";
+import type { MenuFormValues, MenuRecord } from "../features/menus/types";
+import { addMenuToTree, flattenMenus, removeMenuFromTree, updateMenuTree } from "../features/menus/utils";
 
 const API_DELAY = 250;
 
@@ -517,10 +518,75 @@ export const handlers = [
     }),
 
     http.get("/api/menus", async ({ request }) => {
+        const denied = requireAuthentication(request);
+        if (denied) return denied;
+        await delay(API_DELAY);
+        return HttpResponse.json(mockDatabase.getMenus());
+    }),
+
+    http.post("/api/menus", async ({ request }) => {
         const denied = requirePermission(request, "menu:manage");
         if (denied) return denied;
         await delay(API_DELAY);
-        return HttpResponse.json(initialMenus);
+        const values = (await request.json()) as MenuFormValues;
+        const menus = mockDatabase.getMenus();
+        const allMenus = flattenMenus(menus);
+        if (values.path && allMenus.some((item) => item.path === values.path)) {
+            return HttpResponse.json({ message: "이미 사용 중인 라우트 경로입니다." }, { status: 409 });
+        }
+        const expectedParentType = values.type === "BUTTON" ? "MENU" : "DIRECTORY";
+        if (values.parentId !== null && !allMenus.some((item) => item.id === values.parentId && item.type === expectedParentType)) {
+            return HttpResponse.json({ message: "선택한 상위 메뉴 유형이 올바르지 않습니다." }, { status: 400 });
+        }
+        const menu: MenuRecord = { id: Math.max(0, ...allMenus.map((item) => item.id)) + 1, ...values };
+        mockDatabase.saveMenus(addMenuToTree(menus, menu));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "메뉴 관리", action: `메뉴 ${menu.name} 등록` });
+        return HttpResponse.json(menu, { status: 201 });
+    }),
+
+    http.put("/api/menus/:id", async ({ params, request }) => {
+        const denied = requirePermission(request, "menu:manage");
+        if (denied) return denied;
+        await delay(API_DELAY);
+        const id = Number(params.id);
+        const values = (await request.json()) as MenuFormValues;
+        const menus = mockDatabase.getMenus();
+        const allMenus = flattenMenus(menus);
+        const current = allMenus.find((item) => item.id === id);
+        if (!current) return HttpResponse.json({ message: "메뉴를 찾을 수 없습니다." }, { status: 404 });
+        if (current.children?.length && values.type !== current.type) {
+            return HttpResponse.json({ message: "하위 메뉴가 있으면 메뉴 유형을 변경할 수 없습니다." }, { status: 409 });
+        }
+        if (values.parentId === id) return HttpResponse.json({ message: "자기 자신을 상위 메뉴로 지정할 수 없습니다." }, { status: 400 });
+        const expectedParentType = values.type === "BUTTON" ? "MENU" : "DIRECTORY";
+        if (values.parentId !== null && !allMenus.some((item) => item.id === values.parentId && item.type === expectedParentType)) {
+            return HttpResponse.json({ message: "선택한 상위 메뉴 유형이 올바르지 않습니다." }, { status: 400 });
+        }
+        if (values.path && allMenus.some((item) => item.id !== id && item.path === values.path)) {
+            return HttpResponse.json({ message: "이미 사용 중인 라우트 경로입니다." }, { status: 409 });
+        }
+        const descendantIds = new Set(flattenMenus(current.children ?? []).map((item) => item.id));
+        if (values.parentId !== null && descendantIds.has(values.parentId)) {
+            return HttpResponse.json({ message: "하위 메뉴를 상위 메뉴로 지정할 수 없습니다." }, { status: 400 });
+        }
+        const updated: MenuRecord = { ...current, ...values };
+        mockDatabase.saveMenus(updateMenuTree(menus, updated));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "메뉴 관리", action: `메뉴 ${updated.name} 수정` });
+        return HttpResponse.json(updated);
+    }),
+
+    http.delete("/api/menus/:id", async ({ params, request }) => {
+        const denied = requirePermission(request, "menu:manage");
+        if (denied) return denied;
+        await delay(API_DELAY);
+        const id = Number(params.id);
+        const menus = mockDatabase.getMenus();
+        const current = flattenMenus(menus).find((item) => item.id === id);
+        if (!current) return HttpResponse.json({ message: "메뉴를 찾을 수 없습니다." }, { status: 404 });
+        if (current.children?.length) return HttpResponse.json({ message: "하위 메뉴가 있는 디렉터리는 삭제할 수 없습니다." }, { status: 409 });
+        mockDatabase.saveMenus(removeMenuFromTree(menus, id));
+        recordLog({ request, user: getAccountFromRequest(request)!.username, module: "메뉴 관리", action: `메뉴 ${current.name} 삭제` });
+        return new HttpResponse(null, { status: 204 });
     }),
 
     http.get("/api/codes", async ({ request }) => {

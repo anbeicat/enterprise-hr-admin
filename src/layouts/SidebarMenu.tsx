@@ -21,6 +21,9 @@ import type { MenuProps } from "antd";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppSelector } from "../store/hooks";
 import { canAccessRoute } from "../auth/access";
+import { useQuery } from "@tanstack/react-query";
+import { getMenus } from "../features/menus/api";
+import { getActiveMenuPaths } from "../features/menus/utils";
 
 type MenuItem = Required<MenuProps>["items"][number];
 
@@ -147,15 +150,18 @@ export default function SidebarMenu() {
     const navigate = useNavigate();
     const location = useLocation();
     const permissions = useAppSelector((state) => state.auth.permissions);
+    const { data: configuredMenus } = useQuery({ queryKey: ["menus"], queryFn: getMenus });
+    const activePaths = configuredMenus ? getActiveMenuPaths(configuredMenus) : null;
+    const isVisibleRoute = (path: string) => canAccessRoute(permissions, path) && (!activePaths || activePaths.has(path));
     const visibleItems = menuItems.flatMap((item): MenuItem[] => {
         if (!item || !("key" in item)) return [];
         if ("children" in item && Array.isArray(item.children)) {
             const children = (item.children as MenuItem[]).filter(
-                (child) => child && "key" in child && canAccessRoute(permissions, String(child.key)),
+                (child) => child && "key" in child && isVisibleRoute(String(child.key)),
             );
             return children.length > 0 ? [{ ...item, children } as MenuItem] : [];
         }
-        return canAccessRoute(permissions, String(item.key)) ? [item] : [];
+        return isVisibleRoute(String(item.key)) ? [item] : [];
     });
 
     return (

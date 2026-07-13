@@ -14,6 +14,8 @@ import { initialLogs } from "../features/logs/mockData";
 import type { LogRecord } from "../features/logs/types";
 import { initialAttendance } from "../features/attendance/mockData";
 import type { AttendanceRecord } from "../features/attendance/types";
+import { initialMenus } from "../features/menus/mockData";
+import type { MenuRecord } from "../features/menus/types";
 
 const EMPLOYEES_KEY = "enterprise-hr-employees";
 const REQUESTS_KEY = "enterprise-hr-requests";
@@ -23,6 +25,7 @@ const NOTICES_KEY = "enterprise-hr-notices";
 const CODES_KEY = "enterprise-hr-codes";
 const LOGS_KEY = "enterprise-hr-logs";
 const ATTENDANCE_KEY = "enterprise-hr-attendance";
+const MENUS_KEY = "enterprise-hr-menus-v2";
 const DATA_STORAGE_KEYS = [
     EMPLOYEES_KEY,
     REQUESTS_KEY,
@@ -32,6 +35,7 @@ const DATA_STORAGE_KEYS = [
     CODES_KEY,
     LOGS_KEY,
     ATTENDANCE_KEY,
+    MENUS_KEY,
 ];
 
 function readStorage<T>(key: string, fallback: T): T {
@@ -64,5 +68,7 @@ export const mockDatabase = {
     saveLogs: (logs: LogRecord[]) => writeStorage(LOGS_KEY, logs),
     getAttendance: () => readStorage<AttendanceRecord[]>(ATTENDANCE_KEY, initialAttendance),
     saveAttendance: (records: AttendanceRecord[]) => writeStorage(ATTENDANCE_KEY, records),
+    getMenus: () => readStorage<MenuRecord[]>(MENUS_KEY, initialMenus),
+    saveMenus: (menus: MenuRecord[]) => writeStorage(MENUS_KEY, menus),
     reset: () => DATA_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key)),
 };
