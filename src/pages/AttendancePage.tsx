@@ -147,39 +147,54 @@ export default function AttendancePage({ mode }: { mode: "status" | "monthly" })
             {isError && <Alert type="error" showIcon title="근태 정보를 불러오지 못했습니다." style={{ marginBottom: 12 }} />}
 
             <Card style={{ marginBottom: 12 }} styles={{ body: { padding: "16px 16px 4px" } }}>
-                <Form form={form} layout="inline" onFinish={handleSearch}>
-                    <Form.Item label="조회 월">
-                        <DatePicker
-                            picker="month"
-                            value={month}
-                            allowClear={false}
-                            onChange={(value) => {
-                                if (!value) return;
-                                setMonth(value);
-                                setPage(1);
-                            }}
-                        />
-                    </Form.Item>
+                <Form form={form} onFinish={handleSearch}>
+                    <Row gutter={[16, 0]} align="top">
+                        <Col xs={24} md={12} xl={6} xxl={mode === "status" ? 4 : 5}>
+                            <Form.Item label="조회 월" style={{ marginBottom: 12 }}>
+                                <DatePicker
+                                    picker="month"
+                                    value={month}
+                                    allowClear={false}
+                                    style={{ width: "100%" }}
+                                    onChange={(value) => {
+                                        if (!value) return;
+                                        setMonth(value);
+                                        setPage(1);
+                                    }}
+                                />
+                            </Form.Item>
+                        </Col>
                     {mode === "status" && (
-                        <Form.Item label="근무일" name="workDate">
-                            <DatePicker format="YYYY-MM-DD" placeholder="근무일 선택" />
-                        </Form.Item>
+                            <Col xs={24} md={12} xl={6} xxl={4}>
+                                <Form.Item label="근무일" name="workDate" style={{ marginBottom: 12 }}>
+                                    <DatePicker format="YYYY-MM-DD" placeholder="근무일 선택" style={{ width: "100%" }} />
+                                </Form.Item>
+                            </Col>
                     )}
-                    <Form.Item label="직원" name="keyword">
-                        <Input allowClear placeholder="사번 또는 이름" />
-                    </Form.Item>
-                    <Form.Item label="부서" name="department">
-                        <Select allowClear placeholder="전체" style={{ width: 150 }} options={DEPARTMENT_OPTIONS} />
-                    </Form.Item>
-                    <Form.Item label="상태" name="status">
-                        <Select allowClear placeholder="전체" style={{ width: 130 }} options={STATUS_OPTIONS} />
-                    </Form.Item>
-                    <Form.Item>
-                        <Space>
-                            <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>검색</Button>
-                            <Button icon={<ReloadOutlined />} onClick={handleReset}>초기화</Button>
-                        </Space>
-                    </Form.Item>
+                        <Col xs={24} md={12} xl={6} xxl={mode === "status" ? 5 : 6}>
+                            <Form.Item label="직원" name="keyword" style={{ marginBottom: 12 }}>
+                                <Input allowClear placeholder="사번 또는 이름" />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12} xl={6} xxl={mode === "status" ? 4 : 5}>
+                            <Form.Item label="부서" name="department" style={{ marginBottom: 12 }}>
+                                <Select allowClear placeholder="전체" options={DEPARTMENT_OPTIONS} />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12} xl={6} xxl={mode === "status" ? 3 : 4}>
+                            <Form.Item label="상태" name="status" style={{ marginBottom: 12 }}>
+                                <Select allowClear placeholder="전체" options={STATUS_OPTIONS} />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} md={12} xl={6} xxl={4}>
+                            <Form.Item style={{ marginBottom: 12 }}>
+                                <Space wrap={false}>
+                                    <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>검색</Button>
+                                    <Button icon={<ReloadOutlined />} onClick={handleReset}>초기화</Button>
+                                </Space>
+                            </Form.Item>
+                        </Col>
+                    </Row>
                 </Form>
             </Card>
 
@@ -276,7 +291,7 @@ export default function AttendancePage({ mode }: { mode: "status" | "monthly" })
                     <Alert
                         type="info"
                         showIcon
-                        message={`${editingRecord.employeeNo} ${editingRecord.name} · ${editingRecord.workDate}`}
+                        title={`${editingRecord.employeeNo} ${editingRecord.name} · ${editingRecord.workDate}`}
                         style={{ marginBottom: 20 }}
                     />
                 )}
