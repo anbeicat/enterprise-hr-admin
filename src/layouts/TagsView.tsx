@@ -1,5 +1,5 @@
 import { CloseOutlined } from "@ant-design/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROUTE_META } from "../routes/routeMeta";
 import {
@@ -25,6 +25,7 @@ export default function TagsView() {
     const location = useLocation();
     const [tags, setTags] = useState<TagItem[]>(readStoredTags);
     const [suppressedPath, setSuppressedPath] = useState<string | null>(null);
+    const tagElements = useRef(new Map<string, HTMLDivElement>());
     const currentMeta = ROUTE_META[location.pathname];
 
     if (suppressedPath && suppressedPath !== location.pathname) {
@@ -47,6 +48,15 @@ export default function TagsView() {
         sessionStorage.setItem(TAGS_STORAGE_KEY, JSON.stringify(tags));
     }, [tags]);
 
+    useEffect(() => {
+        const activeTag = tagElements.current.get(location.pathname);
+        activeTag?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "nearest",
+        });
+    }, [location.pathname, tags]);
+
     const closeTag = (path: string) => {
         const result = removeTag(tags, path, location.pathname);
         if (path === location.pathname) setSuppressedPath(path);
@@ -56,6 +66,7 @@ export default function TagsView() {
 
     return (
         <div
+            className="tags-scroll"
             style={{
                 height: 36,
                 background: "#fff",
@@ -75,6 +86,10 @@ export default function TagsView() {
                 return (
                     <div
                         key={tag.path}
+                        ref={(element) => {
+                            if (element) tagElements.current.set(tag.path, element);
+                            else tagElements.current.delete(tag.path);
+                        }}
                         onClick={() => navigate(tag.path)}
                         title={tag.title}
                         style={{
