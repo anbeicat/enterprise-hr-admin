@@ -28,6 +28,7 @@ import { logout } from "../store/authSlice";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { getMenus } from "../features/menus/api";
 import { getActiveMenuPaths } from "../features/menus/utils";
+import { TAGS_STORAGE_KEY } from "./tags";
 
 const { Text } = Typography;
 
@@ -71,6 +72,7 @@ export default function HeaderBar({
         localStorage.removeItem("username");
         localStorage.removeItem("role");
         localStorage.removeItem("permissions");
+        sessionStorage.removeItem(TAGS_STORAGE_KEY);
         dispatch(logout());
         queryClient.clear();
         navigate("/login");

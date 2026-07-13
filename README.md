@@ -22,6 +22,7 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 권한 없는 접근을 안내하는 403 화면
 - 인증 상태 기반 Guest Route와 잘못된 주소를 안내하는 404 화면
 - Sidebar, Header, Breadcrumb, TagsView, Footer
+- 방문한 화면을 누적·개별 종료하고 새로고침 후에도 유지하는 세션 TagsView
 - 권한 범위를 반영한 전역 메뉴 검색, 공지 알림, 전체 화면, GitHub 연결
 - 보호 라우트 및 로그아웃
 - 관리자용 데모 데이터 초기화
