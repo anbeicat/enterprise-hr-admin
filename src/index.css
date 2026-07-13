@@ -22,6 +22,28 @@ body {
   color: #303133;
 }
 
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5568 #191f2f;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #191f2f;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #4b5568;
+  border-radius: 999px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
 a {
   color: inherit;
   text-decoration: none;

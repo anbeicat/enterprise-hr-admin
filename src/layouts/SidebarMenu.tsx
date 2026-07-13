@@ -165,18 +165,27 @@ export default function SidebarMenu() {
     });
 
     return (
-        <Menu
-            theme="dark"
-            mode="inline"
-            selectedKeys={[location.pathname]}
-            defaultOpenKeys={["system"]}
-            items={visibleItems}
-            style={{ background: "#191f2f" }}
-            onClick={({ key }) => {
-                if (String(key).startsWith("/")) {
-                    navigate(key);
-                }
+        <div
+            className="sidebar-scroll"
+            style={{
+                height: "calc(100vh - 56px)",
+                overflowY: "auto",
+                overflowX: "hidden",
             }}
-        />
+        >
+            <Menu
+                theme="dark"
+                mode="inline"
+                selectedKeys={[location.pathname]}
+                defaultOpenKeys={["system"]}
+                items={visibleItems}
+                style={{ background: "#191f2f", borderInlineEnd: 0, paddingBottom: 16 }}
+                onClick={({ key }) => {
+                    if (String(key).startsWith("/")) {
+                        navigate(key);
+                    }
+                }}
+            />
+        </div>
     );
 }

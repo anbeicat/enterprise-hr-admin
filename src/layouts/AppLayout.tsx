@@ -19,6 +19,10 @@ export default function AppLayout() {
                 theme="dark"
                 style={{
                     background: "#191f2f",
+                    height: "100vh",
+                    position: "sticky",
+                    top: 0,
+                    overflow: "hidden",
                 }}
             >
                 <div
