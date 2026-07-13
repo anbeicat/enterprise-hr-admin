@@ -150,7 +150,7 @@ npm run test
 npm run test:e2e
 ```
 
-단위 테스트는 Vitest로 도메인 로직을 검증하고, Playwright E2E 테스트는 로그인, 역할별 접근 제어, 직원 검색, 결재 처리, 방문 탭 저장·닫기·자동 스크롤 흐름을 실제 Chromium 환경에서 검증합니다.
+단위 테스트는 Vitest로 도메인 로직을 검증하고, Playwright E2E 테스트는 로그인, 역할별 접근 제어, 직원 검색·등록·수정·삭제, 휴가 신청·철회, 결재 처리, 방문 탭 저장·닫기·자동 스크롤 흐름을 실제 Chromium 환경에서 검증합니다.
 
 GitHub Actions는 `main` Push 및 Pull Request마다 Vitest, ESLint, Production Build, Playwright E2E, 의존성 보안 감사를 자동 실행하고 빌드 결과물과 Playwright 리포트를 Artifact로 보관합니다.
 

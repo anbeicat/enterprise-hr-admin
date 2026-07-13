@@ -56,15 +56,15 @@ export default function EmployeeFormModal({
     }, [form, open, initialValues]);
 
     const handleOk = async () => {
-        const values = await form.validateFields();
         try {
+            const values = await form.validateFields();
             await onSubmit({
                 ...values,
                 joinedAt: values.joinedAt.format("YYYY-MM-DD"),
             });
             form.resetFields();
         } catch {
-            // The parent keeps the modal open and displays the API error.
+            // Ant Form renders validation errors; API errors are displayed by the parent.
         }
     };
 
@@ -126,7 +126,7 @@ export default function EmployeeFormModal({
                             name="departmentName"
                             rules={[{ required: true, message: "부서를 선택해 주세요." }]}
                         >
-                            <Select placeholder="부서 선택" options={DEPARTMENT_OPTIONS} />
+                            <Select aria-label="부서" placeholder="부서 선택" options={DEPARTMENT_OPTIONS} />
                         </Form.Item>
                     </Col>
 
@@ -136,7 +136,7 @@ export default function EmployeeFormModal({
                             name="position"
                             rules={[{ required: true, message: "직급을 선택해 주세요." }]}
                         >
-                            <Select placeholder="직급 선택" options={POSITION_OPTIONS} />
+                            <Select aria-label="직급" placeholder="직급 선택" options={POSITION_OPTIONS} />
                         </Form.Item>
                     </Col>
 
@@ -169,7 +169,7 @@ export default function EmployeeFormModal({
                             name="role"
                             rules={[{ required: true, message: "권한을 선택해 주세요." }]}
                         >
-                            <Select placeholder="권한 선택" options={EMPLOYEE_ROLE_OPTIONS} />
+                            <Select aria-label="권한" placeholder="권한 선택" options={EMPLOYEE_ROLE_OPTIONS} />
                         </Form.Item>
                     </Col>
 
@@ -180,6 +180,7 @@ export default function EmployeeFormModal({
                             rules={[{ required: true, message: "재직상태를 선택해 주세요." }]}
                         >
                             <Select
+                                aria-label="재직상태"
                                 placeholder="재직상태 선택"
                                 options={EMPLOYEE_STATUS_OPTIONS}
                             />
