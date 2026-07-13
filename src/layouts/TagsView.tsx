@@ -24,11 +24,17 @@ export default function TagsView() {
     const navigate = useNavigate();
     const location = useLocation();
     const [tags, setTags] = useState<TagItem[]>(readStoredTags);
+    const [suppressedPath, setSuppressedPath] = useState<string | null>(null);
     const currentMeta = ROUTE_META[location.pathname];
+
+    if (suppressedPath && suppressedPath !== location.pathname) {
+        setSuppressedPath(null);
+    }
 
     if (
         currentMeta &&
         location.pathname !== "/403" &&
+        suppressedPath !== location.pathname &&
         !tags.some((item) => item.path === location.pathname)
     ) {
         setTags(appendTag(tags, {
@@ -43,6 +49,7 @@ export default function TagsView() {
 
     const closeTag = (path: string) => {
         const result = removeTag(tags, path, location.pathname);
+        if (path === location.pathname) setSuppressedPath(path);
         setTags(result.tags);
         if (result.nextPath !== location.pathname) navigate(result.nextPath);
     };
