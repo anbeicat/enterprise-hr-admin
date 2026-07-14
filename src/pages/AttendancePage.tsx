@@ -211,9 +211,13 @@ export default function AttendancePage({ mode }: { mode: "status" | "monthly" })
                         <Row gutter={[24, 18]}>
                             {data.departmentStats.map((item) => (
                                 <Col xs={24} md={12} xl={8} key={item.department}>
-                                    <Space direction="vertical" style={{ width: "100%" }} size={4}>
+                                    <Space orientation="vertical" style={{ width: "100%" }} size={4}>
                                         <span>{item.department} · {item.total}건</span>
-                                        <Progress percent={item.attendanceRate} status={item.attendanceRate < 90 ? "exception" : "normal"} />
+                                        <Progress
+                                            percent={item.attendanceRate}
+                                            status={item.attendanceRate < 90 ? "exception" : "normal"}
+                                            aria-label={`${item.department} 출근율 ${item.attendanceRate}%`}
+                                        />
                                     </Space>
                                 </Col>
                             ))}

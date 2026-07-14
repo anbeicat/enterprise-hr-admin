@@ -36,7 +36,16 @@ export default function DepartmentTable({
             dataSource={departments}
             loading={loading}
             pagination={false}
-            rowSelection={{ selectedRowKeys, onChange: onSelectedRowKeysChange }}
+            rowSelection={{
+                selectedRowKeys,
+                onChange: onSelectedRowKeysChange,
+                getTitleCheckboxProps: () => ({
+                    title: "전체 조직 선택",
+                }),
+                getCheckboxProps: (record) => ({
+                    title: `${record.name} 선택`,
+                }),
+            }}
             expandable={{
                 expandedRowKeys,
                 onExpandedRowsChange: (keys) => onExpandedRowKeysChange([...keys]),

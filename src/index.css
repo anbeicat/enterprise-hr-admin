@@ -26,6 +26,28 @@ body {
   color: #262626;
 }
 
+/* Ant Design preset tag colors need darker text at the default 12px size. */
+.ant-tag.ant-tag-green {
+  color: #237804 !important;
+}
+
+.ant-tag.ant-tag-orange {
+  color: #ad4e00 !important;
+}
+
+.ant-tag.ant-tag-red {
+  color: #a8071a !important;
+}
+
+.ant-tag.ant-tag-blue {
+  color: #0958d9 !important;
+}
+
+/* The table's aria-hidden sizing row must not duplicate focusable controls. */
+.ant-table-measure-row .ant-checkbox-input {
+  display: none;
+}
+
 .sidebar-scroll {
   scrollbar-width: thin;
   scrollbar-color: #4b5568 #191f2f;

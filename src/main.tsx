@@ -40,7 +40,12 @@ enableMocking().then(() => {
             theme={{
               token: {
                 colorPrimary: "#0958d9",
+                colorPrimaryHover: "#003eb3",
                 colorLink: "#0958d9",
+                colorLinkHover: "#003eb3",
+                colorError: "#cf1322",
+                colorErrorHover: "#a8071a",
+                colorErrorActive: "#820014",
                 colorTextPlaceholder: "#6b7280",
                 colorTextSecondary: "#595959",
                 colorTextDescription: "#595959",
