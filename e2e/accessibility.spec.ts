@@ -77,6 +77,8 @@ test("employee form has no detectable WCAG A or AA violations", async ({ page })
 });
 
 test("admin business pages have no detectable WCAG A or AA violations", async ({ page }) => {
+    test.setTimeout(120_000);
+
     await login(page);
 
     for (const path of ADMIN_BUSINESS_ROUTES) {

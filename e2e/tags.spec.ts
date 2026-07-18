@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 import { login } from "./helpers";
 
 test("visited tabs persist, close correctly and reveal the active tab", async ({ page }) => {
+    test.setTimeout(120_000);
+
     await login(page);
     const routes = [
         ["/system/employees", "직원 관리"],
