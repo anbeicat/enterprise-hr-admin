@@ -12,7 +12,8 @@ React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 �
 - 한국어 로그인 화면과 Mock 계정 인증
 - Redux Toolkit 기반 로그인 사용자 및 역할 상태 관리
 - MSW 기반 REST API와 브라우저 로컬 데이터 저장
-- 개발/preview/정적 배포 환경에서 동작하는 Mock API
+- 개발 및 포트폴리오 Demo 빌드에서 동작하는 Mock API
+- Mock 코드를 제외하는 실제 API용 Production 빌드
 - 역할별 사이드바 메뉴 노출
 - 역할별 라우트 및 등록·수정·삭제 버튼 접근 제어
 - 역할 관리에서 변경한 권한을 로그인 세션·메뉴·라우트·버튼·API에 일관 적용
@@ -104,30 +105,36 @@ src/
   pages/                # 업무별 화면
   routes/               # 라우트, 보호 라우트, 메타데이터
   store/                # Redux store와 인증 상태
-  utils/                # CSV 내보내기 등 공통 유틸리티
+  utils/                # Excel 가져오기/내보내기 등 공통 유틸리티
 ```
 
 ## 실행 방법
 
 ```bash
+nvm use
 npm install
 npm run dev
 ```
 
 브라우저에서 `http://localhost:5173`으로 접속합니다.
 
-프로덕션 빌드와 Preview도 Mock API를 사용할 수 있습니다.
+개발 서버는 기본적으로 MSW Mock API를 사용합니다. 포트폴리오 배포용 Demo 빌드도 Mock API와 함께 생성할 수 있습니다.
 
 ```bash
-npm run build
+npm run build:demo
 npm run preview
 ```
 
-실제 Spring Boot API를 연결할 때는 환경변수를 설정합니다.
+실제 Spring Boot API를 연결하는 Production 빌드는 Mock 코드를 제외합니다. `.env.example`을 `.env.production.local`로 복사한 뒤 API 주소를 설정합니다.
 
 ```env
 VITE_ENABLE_MOCKS=false
 VITE_API_BASE_URL=https://api.example.com/api
+```
+
+```bash
+npm run build
+npm run preview
 ```
 
 ## 테스트 계정

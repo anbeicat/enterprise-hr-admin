@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-*
 .env
 .env.local
 .DS_Store
