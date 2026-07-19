@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/anbeicat/enterprise-hr-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/anbeicat/enterprise-hr-admin/actions/workflows/ci.yml)
 
+[온라인 Demo](https://enterprise-hr-admin.vercel.app)
+
 React와 TypeScript 기반의 기업 인사·근태·전자결재 백오피스 프론트엔드 프로젝트입니다.
 한국 기업의 사내 관리자 시스템에서 자주 사용하는 직원·조직·권한·신청·결재·근태·공지·감사 업무를 하나의 관리 화면으로 구성했습니다.
 
@@ -136,6 +138,18 @@ VITE_API_BASE_URL=https://api.example.com/api
 npm run build
 npm run preview
 ```
+
+## Vercel Demo 배포
+
+저장소의 `vercel.json`은 포트폴리오 Demo 배포 시 `npm run build:demo`를 실행하고 `dist`를 배포합니다. React Router의 직접 URL 접근을 지원하도록 모든 업무 경로를 `/index.html`로 rewrite하며, 해시가 포함된 정적 자산에는 장기 캐시 헤더를 적용합니다.
+
+- Production URL: <https://enterprise-hr-admin.vercel.app>
+
+1. Vercel에서 이 GitHub 저장소를 Import합니다.
+2. Framework Preset은 `Vite`를 선택합니다.
+3. 별도의 환경변수 없이 Deploy합니다.
+
+배포 후 `/system/employees`, `/approvals/pending`, `/attendance/monthly` 같은 경로를 새 탭에서 직접 열어도 애플리케이션이 정상적으로 로드되어야 합니다. 실제 Spring Boot API용 배포에서는 Vercel 프로젝트의 Build Command를 `npm run build`로 변경하고 `VITE_API_BASE_URL`을 설정합니다.
 
 ## 테스트 계정
 
