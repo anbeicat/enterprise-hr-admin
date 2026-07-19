@@ -54,6 +54,7 @@ async function waitForAnimations(locator: Locator) {
 test("login page has no detectable WCAG A or AA violations", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByRole("heading", { name: "인사·근태 관리 시스템" })).toBeVisible();
+    await expect(page.getByRole("main")).toBeVisible();
     await expect(page.locator(".ant-spin-fullscreen")).toHaveCount(0);
     await expectNoAccessibilityViolations(page);
 });

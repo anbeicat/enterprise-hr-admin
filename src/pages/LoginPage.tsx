@@ -59,7 +59,8 @@ export default function LoginPage() {
     };
 
     return (
-        <div
+        <main
+            aria-labelledby="login-title"
             style={{
                 minHeight: "100vh",
                 position: "relative",
@@ -84,6 +85,7 @@ export default function LoginPage() {
                 }}
             >
                 <Title
+                    id="login-title"
                     level={4}
                     style={{
                         textAlign: "center",
@@ -199,6 +201,6 @@ export default function LoginPage() {
             >
                 Copyright © 2026 Enterprise HR Admin. All Rights Reserved.
             </div>
-        </div>
+        </main>
     );
 }
